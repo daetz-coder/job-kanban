@@ -100,7 +100,7 @@ python server.py --no-browser            # 不自动打开浏览器
 python server.py --help
 ```
 
-> **在线试用**：<https://your-name.github.io/job-tracker/>（纯前端模式，数据存浏览器本地；功能完整，但没有后端自动落盘）
+> **在线试用**：<https://daetz-coder.github.io/job-tracker/>（纯前端模式，数据存浏览器本地；功能完整，但没有后端自动落盘）
 >
 > **不想起服务？** 直接双击 `dashboard.html` 也能用（纯前端模式：数据存在浏览器本地，可用「导出」存 JSON）。但**推荐用服务模式**——数据直接落盘到 JSON，不依赖浏览器缓存。
 
