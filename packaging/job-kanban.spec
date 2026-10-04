@@ -26,7 +26,9 @@ a = Analysis(
     hiddenimports=['job_kanban'],
     hookspath=[],
     runtime_hooks=[],
-    excludes=['tkinter', 'unittest', 'pydoc', 'doctest', 'email', 'http.cookiejar'],
+    # 只排除真正用不到的：email / http.cookiejar 是 http.server 的依赖，排除会导致
+    # 打包后启动即 ModuleNotFoundError
+    excludes=['tkinter', 'pydoc', 'doctest', 'unittest'],
     noarchive=False,
 )
 pyz = PYZ(a.pure)
