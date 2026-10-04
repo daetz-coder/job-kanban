@@ -179,6 +179,11 @@ make shots      # regenerate the README screenshots
 
 <img src="docs/screenshot-list.png" alt="List view" width="100%">
 
+**Mobile** (add to home screen to use it as an app; works offline)
+
+<img src="docs/mobile-board.png" alt="Mobile" width="300">
+
+
 ## Data & safety
 
 The ledger lives in `data/ledger.json` (indented JSON, so `git diff` shows exactly which record changed).

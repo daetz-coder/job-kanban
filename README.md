@@ -183,6 +183,11 @@ make shots    # 重新生成 README 截图
 
 <img src="docs/screenshot-list.zh.png" alt="列表视图" width="100%">
 
+**手机端**（可"添加到主屏幕"当应用用，离线可用）
+
+<img src="docs/mobile-board.png" alt="手机端" width="300">
+
+
 ## 数据与安全
 
 数据默认在 `data/ledger.json`（缩进过的 JSON，`git diff` 能看清改了哪一条）。
