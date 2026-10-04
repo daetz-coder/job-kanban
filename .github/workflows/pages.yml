@@ -1,6 +1,9 @@
 name: Deploy demo to GitHub Pages
 
 # 把 dashboard.html 发布为站点首页，提供「在线试用」（无后端，数据存浏览器本地）
+#
+# 注意：GitHub Pages 在免费账号下只支持公开仓库。因此这里加了守卫——
+# 仓库还是私有的时候自动跳过，转为公开后无需改动即可生效。
 on:
   push:
     branches: [main, master]
@@ -21,6 +24,7 @@ concurrency:
 
 jobs:
   build:
+    if: github.event.repository.visibility == 'public'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -41,6 +45,7 @@ jobs:
 
   deploy:
     needs: build
+    if: github.event.repository.visibility == 'public'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

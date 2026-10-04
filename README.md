@@ -101,6 +101,7 @@ python server.py --help
 ```
 
 > **在线试用**：<https://daetz-coder.github.io/job-tracker/>（纯前端模式，数据存浏览器本地；功能完整，但没有后端自动落盘）
+> 该 Demo 由 `.github/workflows/pages.yml` 自动发布；GitHub Pages 免费版只支持公开仓库，所以仓库转为公开后会自动生效（私有期间工作流自动跳过）。
 >
 > **不想起服务？** 直接双击 `dashboard.html` 也能用（纯前端模式：数据存在浏览器本地，可用「导出」存 JSON）。但**推荐用服务模式**——数据直接落盘到 JSON，不依赖浏览器缓存。
 
