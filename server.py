@@ -31,6 +31,15 @@ import threading
 import time
 import urllib.parse
 
+
+# Windows 控制台可能是 GBK / cp1252，直接打印中文会抛 UnicodeEncodeError
+try:
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+except Exception:
+    pass
+
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 DASH = os.path.join(HERE, 'dashboard.html')
 KEEP_BACKUPS = 50

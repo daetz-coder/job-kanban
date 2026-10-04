@@ -109,7 +109,7 @@ python server.py --help
 ```bash
 make          # 查看所有命令
 make run      # 启动服务
-make check    # 提交前检查（Python 语法 + 前端测试）
+make check    # 一键完整检查（语法 + 前端测试 + 冒烟 + 安全）
 make shots    # 重新生成 README 截图
 ```
 
@@ -168,7 +168,9 @@ job-tracker/
 │   └── screenshot.py         # 用 headless Chrome 重新生成 README 截图
 ├── docs/                     # 截图、架构说明、自定义指南
 └── tests/
-    └── dashboard.test.js     # 100 项回归测试（Node + DOM 桩，无需浏览器）
+    ├── dashboard.test.js     # 100 项回归测试（Node + DOM 桩，无需浏览器）
+    ├── smoke_test.py         # 14 项服务冒烟测试（跨平台，无需 bash/curl）
+    └── safety_check.py       # 5 项开源安全与隐私检查
 ```
 
 ## 配置
@@ -249,9 +251,10 @@ python tools/screenshot.py       # 用 headless Chrome 重新生成 README 截�
 ## 开发
 
 ```bash
-make check                        # Python 语法检查 + 前端回归测试（提交前跑这个）
-npm test                          # 或 node tests/dashboard.test.js
-python -m py_compile server.py    # 仅语法检查
+make check                        # 一键完整检查（语法 + 前端测试 + 冒烟 + 安全）
+npm test                          # 只跑前端回归测试（100 项）
+npm run test:smoke                # 服务冒烟测试（14 项，会临时起服务）
+npm run test:safety               # 开源安全与隐私检查（5 项）
 ```
 
 - 改 `dashboard.html` 后**刷新页面即可**（服务每次请求实时读取文件，不用重启）

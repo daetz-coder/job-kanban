@@ -938,6 +938,7 @@ function parsePositions(text){
 const BACKUP_PREFIX = 'toudi_ledger_bak_';
 const BACKUP_KEEP = 10;
 const DAY_MARK = 'toudi_ledger_bak_day';
+let backupSeq = 0;
 function backupKeys(){
   const keys = [];
   try{
@@ -946,14 +947,17 @@ function backupKeys(){
       if(k && k.indexOf(BACKUP_PREFIX)===0) keys.push(k);
     }
   }catch(e){}
-  return keys.sort();
+  return keys.sort();                     // key 以毫秒时间戳开头，字典序即时间序
 }
 function snapshot(reason){
   try{
+    const now = Date.now();
+    /* key 必须唯一：同一毫秒内多次快照（如保存触发的每日备份）不能互相覆盖 */
+    const key = BACKUP_PREFIX + now + '-' + String(++backupSeq).padStart(4, '0');
     const payload = JSON.stringify({
-      ts: new Date().toISOString(), reason: reason||'',
+      ts: new Date(now).toISOString(), reason: reason||'',
       count: (state.applications||[]).length, data: state });
-    localStorage.setItem(BACKUP_PREFIX + Date.now(), payload);
+    localStorage.setItem(key, payload);
     const keys = backupKeys();
     while(keys.length > BACKUP_KEEP) localStorage.removeItem(keys.shift());
     return true;
@@ -965,7 +969,8 @@ function listBackups(){
     try{ const o = JSON.parse(localStorage.getItem(k));
       out.push({key:k, ts:o.ts||'', reason:o.reason||'', count:o.count||0}); }catch(e){}
   });
-  return out.sort((a,b)=> String(b.ts).localeCompare(String(a.ts)));
+  /* 时间倒序；同一毫秒时用 key（含序号）兜底，保证顺序稳定 */
+  return out.sort((a,b)=> String(b.ts).localeCompare(String(a.ts)) || String(b.key).localeCompare(String(a.key)));
 }
 function restoreBackup(key){
   try{

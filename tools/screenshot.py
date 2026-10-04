@@ -23,6 +23,15 @@ import tempfile
 import time
 import urllib.request
 
+
+# Windows 控制台可能是 GBK / cp1252，直接打印中文会抛 UnicodeEncodeError
+try:
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+except Exception:
+    pass
+
+
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DOCS = os.path.join(HERE, 'docs')
 SAMPLE = os.path.join(HERE, 'data', 'sample-ledger.json')

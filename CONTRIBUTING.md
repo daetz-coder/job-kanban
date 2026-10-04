@@ -23,9 +23,10 @@ python server.py          # 启动本地服务（会自动用示例数据初始�
 ## 跑测试
 
 ```bash
-make check                      # Python 语法检查 + 前端回归测试（推荐）
-npm test                        # 只跑前端测试
-python -m py_compile server.py  # 只做语法检查
+make check              # 完整检查：语法 + 前端测试 + 冒烟测试 + 安全检查（推荐）
+npm test                # 只跑前端回归测试（100 项）
+npm run test:smoke      # 只跑服务冒烟测试（14 项）
+npm run test:safety     # 只跑开源安全与隐私检查（5 项）
 ```
 
 测试用最小 DOM 桩直接执行 `dashboard.html` 里的脚本，**不需要浏览器**，几百毫秒跑完。

@@ -11,6 +11,16 @@ import collections
 import io
 import json
 import os
+import sys
+
+
+# Windows 控制台可能是 GBK / cp1252，直接打印中文会抛 UnicodeEncodeError
+try:
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+except Exception:
+    pass
+
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PIPELINE = ['未投递', '已投递', '综合素质评测', '笔试', '一面', '二面', '三面', 'HR面', 'offer']

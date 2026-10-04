@@ -2,6 +2,24 @@
 
 本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/) 与 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [1.0.1] - 2026-10-04
+
+修复 CI 在 Windows 上暴露的三个真实问题。
+
+### 修复
+
+- **备份 key 可能互相覆盖**：snapshot() 原先用 Date.now() 当 key，同一毫秒内两次快照（例如保存时触发的每日备份）会覆盖前一份，导致「恢复快照」可能拿回空状态。现在 key 追加自增序号，并按时间 + 序号稳定排序。
+- **非 UTF-8 控制台打印中文会崩溃**：Windows 上控制台代码页为 GBK/cp1252 时，server.py 与各工具启动时打印中文会抛 UnicodeEncodeError（服务直接起不来）。现在启动时把 stdout/stderr 重配置为 UTF-8 并允许替换字符。
+- **CI 冒烟测试依赖 bash / curl**：在 Windows runner 上不稳定。改为跨平台 Python 脚本 	ests/smoke_test.py。
+
+### 新增
+
+- 	ests/smoke_test.py：跨平台冒烟测试（页面 / 整份读取 / 按条新增 / 按条更新不影响其它记录 / 按条删除 / 404 / 写前备份 / 非法载荷拒绝，共 14 项）
+- 	ests/safety_check.py：开源安全与隐私检查（看板无真实公司名、个人台账未被跟踪、无个人身份信息、示例数据虚构、无备份临时文件入库，共 5 项）
+- make check 与 
+pm run check 一键跑完整检查
+- CI 矩阵精简为 3 个组合（ubuntu 最新 / ubuntu 最低版本 / windows 交叉验证）
+
 ## [1.0.0] - 2026-10-04
 
 首个公开版本。
