@@ -7,6 +7,8 @@
 
 **A local-first job-application kanban: drag cards to advance stages, and your data stays in a plain JSON file you own.**
 
+**🟢 [Live demo](https://daetz-coder.github.io/job-kanban/) · [Download a binary](https://github.com/daetz-coder/job-kanban/releases/latest)**
+
 [![Python](https://img.shields.io/badge/Python-3.8%2B-3776ab?logo=python&logoColor=white)](https://www.python.org/)
 [![Dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)](server.py)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
@@ -150,7 +152,7 @@ python server.py --no-browser            # don't open the browser
 python server.py --help
 ```
 
-> **Online demo**: <https://daetz-coder.github.io/job-kanban/> — frontend-only mode, data stays in your browser. Published automatically by `.github/workflows/pages.yml` (GitHub Pages requires a public repo, so it activates once this repo goes public).
+> **🟢 Live demo**: <https://daetz-coder.github.io/job-kanban/> — nothing to install; installable as an app and works offline, and Chrome/Edge can bind a local JSON file for autosave. Published automatically by `.github/workflows/pages.yml` on every push.
 >
 > **No server?** You can also just open `dashboard.html` directly (frontend-only: data lives in browser storage, export to JSON when needed). Server mode is recommended — it writes straight to disk.
 

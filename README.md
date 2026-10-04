@@ -8,6 +8,8 @@
 
 **一个把秋招投递管明白的本地工具：看板拖拽推进状态，数据是你自己的一份 JSON。**
 
+**🟢 [在线试用](https://daetz-coder.github.io/job-kanban/) · [下载免安装版](https://github.com/daetz-coder/job-kanban/releases/latest)**
+
 [![Python](https://img.shields.io/badge/Python-3.8%2B-3776ab?logo=python&logoColor=white)](https://www.python.org/)
 [![Dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)](server.py)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
@@ -153,8 +155,8 @@ python server.py --no-browser            # 不自动打开浏览器
 python server.py --help
 ```
 
-> **在线试用**：<https://daetz-coder.github.io/job-kanban/>（纯前端模式，数据存浏览器本地；功能完整，但没有后端自动落盘）
-> 该 Demo 由 `.github/workflows/pages.yml` 自动发布；GitHub Pages 免费版只支持公开仓库，所以仓库转为公开后会自动生效（私有期间工作流自动跳过）。
+> **🟢 在线试用（已上线）**：<https://daetz-coder.github.io/job-kanban/> —— 零安装，打开即用；可「安装」成应用并离线使用，Chrome/Edge 下还能绑定本地 JSON 文件实现自动写盘。
+> 该站点由 `.github/workflows/pages.yml` 在每次推送时自动发布。
 >
 > **不想起服务？** 直接双击 `dashboard.html` 也能用（纯前端模式：数据存在浏览器本地，可用「导出」存 JSON）。但**推荐用服务模式**——数据直接落盘到 JSON，不依赖浏览器缓存。
 
