@@ -85,6 +85,10 @@ def read_text(rel):
         return None
 
 
+# GitHub UI paths that are valid on github.com but not local files
+GH_ONLY = re.compile(r'^(\.\./)+(issues|releases|security|pulls|discussions|compare|graphs|actions|wiki|blob|tree)(/|$)')
+
+
 def main():
     files = tracked_files()
     print('Checking %d files\n' % len(files))
@@ -118,6 +122,33 @@ def main():
     # 5. 备份与临时文件不得被跟踪
     junk = [f for f in files if f.startswith('data/.backup/') or f.endswith(('.tmp', '.pyc'))]
     check('No backup/temp files tracked', not junk, ', '.join(junk[:5]))
+
+    # 6. README defaults to Chinese; the English one is kept alongside
+    readme_zh = read_text('README.md') or ''
+    readme_en = read_text('README.en.md')
+    check('README.md is the Chinese one (default view)', bool(re.search(r'[\u4e00-\u9fff]', readme_zh)))
+    check('README.en.md exists and is English', readme_en is not None and bool(re.search(r'[A-Za-z]', readme_en)))
+
+    # 7. relative Markdown links must resolve (catches dead links after renames)
+    broken = []
+    for rel in files:
+        if not rel.endswith('.md'):
+            continue
+        text = read_text(rel)
+        if text is None:
+            continue
+        base_dir = os.path.dirname(rel)
+        for m in re.finditer(r'\]\(([^)\s]+)\)', text):
+            target = m.group(1).split('#')[0].strip()
+            if not target or '://' in target or target.startswith('mailto:'):
+                continue
+            # GitHub-only relative links (../../issues, ../../releases, ...) are not local files
+            if GH_ONLY.match(target):
+                continue
+            p2 = os.path.normpath(os.path.join(HERE, base_dir, target))
+            if not os.path.exists(p2):
+                broken.append('%s -> %s' % (rel, target))
+    check('relative Markdown links resolve', not broken, ', '.join(sorted(set(broken))[:5]))
 
     print('\n%d passed, %d failed' % (len(ok), len(bad)))
     if bad:

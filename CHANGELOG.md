@@ -2,6 +2,20 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/).
 
+## [1.2.2] - 2026-10-04
+
+### Changed
+
+- **The README now defaults to Chinese**, matching the UI: `README.md` is the Chinese version and `README.en.md` is the English one. The language-switch badges at the top of both point at each other, and `pyproject.toml` therefore publishes the Chinese README to PyPI.
+- Documentation cross-references updated: English docs (`CONTRIBUTING.md`, `SECURITY.md`, `docs/*.md`) link to `README.en.md`; Chinese docs (`*.zh-CN.md`) link to `README.md`.
+- Both READMEs refreshed: test counts (124) and the complete `tests/` tree (dashboard / smoke / safety / cjk / packaging).
+
+### Added
+
+- `tests/safety_check.py` gained two checks (now 8 in total):
+  - `README.md` must be the Chinese one and `README.en.md` must exist and be English — the default-language decision is now enforced by a test;
+  - every relative Markdown link must resolve to a real file. This caught stale links immediately after the rename, and it whitelists GitHub-only paths such as `../../issues` and `../../releases`.
+
 ## [1.2.1] - 2026-10-04
 
 ### Changed
@@ -143,6 +157,7 @@ First public release.
 - **The on-disk file is authoritative, not localStorage**: localStorage gets wiped, differs per browser and can't go into git.
 - **JSON over SQLite**: for a single user with a few hundred records, git-diffability and portability matter more; the real risks are solved with per-record writes + a write lock + atomic replace.
 
+[1.2.2]: https://github.com/daetz-coder/job-kanban/releases/tag/v1.2.2
 [1.2.1]: https://github.com/daetz-coder/job-kanban/releases/tag/v1.2.1
 [1.2.0]: https://github.com/daetz-coder/job-kanban/releases/tag/v1.2.0
 [1.1.1]: https://github.com/daetz-coder/job-kanban/releases/tag/v1.1.1

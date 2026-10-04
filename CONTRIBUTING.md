@@ -4,7 +4,7 @@ Thanks for wanting to improve this tool 🙌
 
 ## Before you start
 
-Please read the [design notes](README.md#design-notes) first. Three ground rules:
+Please read the [design notes](README.en.md#design-notes) first. Three ground rules:
 
 1. **No runtime dependencies** — the frontend is plain vanilla JS in a single file; the backend uses the Python standard library only. Don't add npm/pip runtime deps.
 2. **Never lose data** — any change touching writes, import, merging or reset must answer: could it overwrite someone's data? Can it be undone on failure?
@@ -78,7 +78,7 @@ Use the [issue templates](https://github.com/daetz-coder/job-kanban/issues/new/c
 
 - JavaScript: 2-space indent, single quotes, semicolons at statement ends (follow the existing file)
 - Python: PEP 8, UTF-8, `# -*- coding: utf-8 -*-` header
-- Chinese keys in the data schema are intentional — see [Data format](README.md#data-format)
+- Chinese keys in the data schema are intentional — see [Data format](README.en.md#data-format)
 
 ## Security
 
