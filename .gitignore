@@ -1,5 +1,6 @@
 # 本地数据（个人隐私，不入库）
-data/ledger.json
+data/*.json
+!data/sample-ledger.json
 data/*.tmp
 data/.backup/
 *.local.json

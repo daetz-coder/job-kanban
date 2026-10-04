@@ -1,0 +1,82 @@
+name: 🐛 Bug 报告
+description: 报告一个问题（崩溃 / 显示错误 / 数据异常）
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈！请尽量填完整，尤其是**复现步骤**。
+        ⚠️ 请勿粘贴真实投递数据（企业名、内推人、面试备注），可用示例数据复现。
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: 问题描述
+      description: 发生了什么？期望是什么？
+      placeholder: |
+        例如：在「按岗位」视图拖动分组卡时，卡片没有移动，控制台报错 xxx
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      placeholder: |
+        1. 启动 python server.py
+        2. 打开 http://127.0.0.1:8765/
+        3. 切到「按岗位」
+        4. 拖动 xxx
+        5. 出现 xxx
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: 涉及模块
+      multiple: true
+      options:
+        - 看板视图（拖拽 / 泳道 / 卡片）
+        - 列表视图（搜索 / 筛选 / 排序）
+        - 岗位管理（批量粘贴 / 分组卡 / 聚合）
+        - 数据与同步（保存 / 导入导出 / 撤销 / 备份）
+        - 本地服务（server.py / API）
+        - 工具脚本（check-links / sync-timeline / build-embed）
+        - 其他
+
+  - type: input
+    id: os
+    attributes:
+      label: 操作系统
+      placeholder: Windows 11 / macOS 14 / Ubuntu 22.04
+    validations:
+      required: true
+
+  - type: input
+    id: env
+    attributes:
+      label: Python 与浏览器版本
+      placeholder: Python 3.12.0 / Chrome 124
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 日志或截图
+      description: 浏览器控制台报错、服务端输出、截图（可拖拽上传）
+      render: shell
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: 确认
+      options:
+        - label: 我已确认这不是「按岗位视图的分组卡不可拖拽」等已知设计行为（见 README 常见问题）
+          required: true
+        - label: 我使用的是最新版本
+          required: false

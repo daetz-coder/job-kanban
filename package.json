@@ -1,0 +1,25 @@
+{
+  "name": "job-tracker",
+  "version": "1.0.0",
+  "description": "求职投递看板 —— 本地优先的投递管理工具（单文件前端 + 零依赖 Python 服务）",
+  "private": true,
+  "scripts": {
+    "test": "node tests/dashboard.test.js",
+    "start": "python server.py",
+    "check-links": "python tools/check-links.py",
+    "timeline": "python tools/sync-timeline.py",
+    "embed": "python tools/build-embed.py"
+  },
+  "keywords": [
+    "job-tracker",
+    "kanban",
+    "campus-recruitment",
+    "local-first",
+    "vanilla-js",
+    "python"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=14"
+  }
+}

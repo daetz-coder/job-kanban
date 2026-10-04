@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: 测试（Node ${{ matrix.node }} / Python ${{ matrix.python }}）
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: ['18', '20']
+        python: ['3.9', '3.12']
+        exclude:
+          - os: windows-latest
+            node: '18'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: 前端回归测试
+        run: node tests/dashboard.test.js
+
+      - name: Python 语法检查
+        run: python -m py_compile server.py tools/build-embed.py tools/check-links.py tools/sync-timeline.py
+
+      - name: 服务冒烟测试（启动 → 读接口 → 按条写入 → 删除）
+        shell: bash
+        run: |
+          set -e
+          python server.py --port 8791 --no-browser --data data/ci-ledger.json &
+          SERVER_PID=$!
+          for i in $(seq 1 20); do
+            if curl -sf http://127.0.0.1:8791/api/state > /dev/null; then break; fi
+            sleep 0.5
+          done
+          echo "--- 整份读取 ---"
+          curl -sf http://127.0.0.1:8791/api/state | head -c 200
+          echo
+          echo "--- 按条写入 ---"
+          curl -sf -X PUT http://127.0.0.1:8791/api/app/ci-001 \
+            -H 'Content-Type: application/json' \
+            -d '{"id":"ci-001","企业":"CI测试","投递状态":"已投递"}'
+          echo
+          echo "--- 校验写入结果 ---"
+          curl -sf http://127.0.0.1:8791/api/state | grep -q 'CI测试' && echo "写入成功"
+          echo "--- 按条删除 ---"
+          curl -sf -X DELETE http://127.0.0.1:8791/api/app/ci-001
+          echo
+          kill $SERVER_PID
+
+      - name: 看板不得含真实公司名（开源安全）
+        shell: bash
+        run: |
+          set -e
+          for name in 阿里巴巴 蚂蚁集团 字节跳动 腾讯 百度 美团 京东 网易 华为 海康威视; do
+            if grep -q "$name" dashboard.html; then
+              echo "::error::dashboard.html 含真实公司名：$name"
+              exit 1
+            fi
+          done
+          echo "通过：看板内无真实公司名"
+
+      - name: 个人数据不得入库
+        shell: bash
+        run: |
+          set -e
+          if git ls-files --error-unmatch data/ledger.json > /dev/null 2>&1; then
+            echo "::error::data/ledger.json 被提交了，应被 .gitignore 忽略"
+            exit 1
+          fi
+          echo "通过：个人台账未被跟踪"
