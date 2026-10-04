@@ -23,14 +23,16 @@ python server.py          # 启动本地服务（会自动用示例数据初始�
 ## 跑测试
 
 ```bash
-npm test                        # 或 node tests/dashboard.test.js
-python -m py_compile server.py  # 语法检查
+make check                      # Python 语法检查 + 前端回归测试（推荐）
+npm test                        # 只跑前端测试
+python -m py_compile server.py  # 只做语法检查
 ```
 
 测试用最小 DOM 桩直接执行 `dashboard.html` 里的脚本，**不需要浏览器**，几百毫秒跑完。
 
 - 断言必须**与数据量无关**（示例数据只有 12 条也能跑），不要写死「50 家」这类数字
 - 新增功能请补测试；修 bug 请先写一个能复现的断言
+- 界面改动请用 `python tools/screenshot.py` 重新生成截图（它用示例数据起临时服务，不会碰真实台账）
 
 ## 提交规范
 
@@ -56,8 +58,8 @@ docs: 补充 API 示例
 ## Pull Request
 
 1. Fork → 新建分支（`feat/xxx` 或 `fix/xxx`）
-2. 保证 `npm test` 全绿
-3. 若改了界面，附截图（可参考 README 里的截图生成方式：headless Chrome 截图）
+2. 保证 `make check` 全绿
+3. 若改了界面，用 `python tools/screenshot.py` 重新生成截图并一并提交
 4. PR 描述里说明：**改了什么 / 为什么 / 怎么验证的**
 5. 如果改动涉及数据格式，请说明**向后兼容性**（老数据能否直接读）
 

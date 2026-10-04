@@ -100,7 +100,18 @@ python server.py --no-browser            # 不自动打开浏览器
 python server.py --help
 ```
 
+> **在线试用**：<https://your-name.github.io/job-tracker/>（纯前端模式，数据存浏览器本地；功能完整，但没有后端自动落盘）
+>
 > **不想起服务？** 直接双击 `dashboard.html` 也能用（纯前端模式：数据存在浏览器本地，可用「导出」存 JSON）。但**推荐用服务模式**——数据直接落盘到 JSON，不依赖浏览器缓存。
+
+### 常用命令
+
+```bash
+make          # 查看所有命令
+make run      # 启动服务
+make check    # 提交前检查（Python 语法 + 前端测试）
+make shots    # 重新生成 README 截图
+```
 
 ## 界面预览
 
@@ -146,14 +157,16 @@ job-tracker/
 ├── dashboard.html            # 看板（单文件：界面 + 逻辑 + 兜底数据）
 ├── server.py                 # 本地服务（静态页 + 按条写入 API，仅标准库）
 ├── start.bat / start.sh      # 一键启动（Windows / macOS·Linux）
+├── Makefile                  # 常用命令（run / test / check / shots / clean）
 ├── data/
 │   ├── sample-ledger.json    # 示例数据（12 家虚构公司，可提交）
 │   └── ledger.json           # 你的台账（gitignore）
 ├── tools/
 │   ├── build-embed.py        # 把 JSON 内嵌进 dashboard.html
 │   ├── check-links.py        # 批量检测投递链接可访问性
-│   └── sync-timeline.py      # 生成 Markdown 时间线视图
-├── docs/                     # 截图与架构说明
+│   ├── sync-timeline.py      # 生成 Markdown 时间线视图
+│   └── screenshot.py         # 用 headless Chrome 重新生成 README 截图
+├── docs/                     # 截图、架构说明、自定义指南
 └── tests/
     └── dashboard.test.js     # 100 项回归测试（Node + DOM 桩，无需浏览器）
 ```
@@ -226,22 +239,27 @@ curl -X PUT http://127.0.0.1:8765/api/app/sample-001 \
 python tools/check-links.py      # 批量检测投递链接可访问性，写回「链接状态」字段
 python tools/sync-timeline.py    # 生成 timeline.md（状态速览 + 投递时间线 + 待投递清单）
 python tools/build-embed.py      # 把 JSON 内嵌进 dashboard.html（改了兜底数据时用）
+python tools/screenshot.py       # 用 headless Chrome 重新生成 README 截图
 ```
 
 `check-links.py` 把结果分三类，避免误判：`可访问` / `真问题·404|域名解析失败` / `待确认·环境受限|SSL证书|超时`。在能正常上网的机器上运行最准。
 
+`screenshot.py` 会用**示例数据**起一个临时服务并截图，不会碰到你的真实台账，输出到 `docs/`。
+
 ## 开发
 
 ```bash
+make check                        # Python 语法检查 + 前端回归测试（提交前跑这个）
 npm test                          # 或 node tests/dashboard.test.js
-python -m py_compile server.py    # 语法检查
+python -m py_compile server.py    # 仅语法检查
 ```
 
 - 改 `dashboard.html` 后**刷新页面即可**（服务每次请求实时读取文件，不用重启）
 - 改了 `server.py` 需重启服务
 - 测试用最小 DOM 桩直接执行页面脚本，**不需要浏览器**；断言与数据量无关，示例数据也能跑
 
-详见 [CONTRIBUTING.md](CONTRIBUTING.md) 与 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)。
+想改状态阶段、统计口径、自定义字段、主题色？见 **[自定义指南](docs/CUSTOMIZATION.md)**。
+架构与设计取舍见 **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**；贡献流程见 **[CONTRIBUTING.md](CONTRIBUTING.md)**。
 
 ## 常见问题
 
