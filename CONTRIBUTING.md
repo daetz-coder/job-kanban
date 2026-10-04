@@ -23,10 +23,11 @@ No dependencies to install. Node is only needed for the tests (Node 14+).
 ## Running the tests
 
 ```bash
-make check              # full: lint + frontend tests + smoke test + safety check
+make check              # full: lint + frontend tests + smoke + safety + CJK guard
 npm test                # frontend regression tests only (112)
 npm run test:smoke      # server smoke test only (14)
 npm run test:safety     # open-source safety & privacy checks only (5)
+npm run test:cjk        # rendered English UI must contain no Chinese (needs Chrome)
 ```
 
 The tests execute the page script against minimal DOM stubs — **no browser needed**, and they finish in a few hundred milliseconds.
@@ -34,6 +35,7 @@ The tests execute the page script against minimal DOM stubs — **no browser nee
 - Assertions must be **data-size independent** (the 12-record sample data must pass) — don't hard-code "50 companies"
 - Add tests for new features; for bug fixes, write a failing assertion first
 - For UI changes, regenerate the screenshots with `python tools/screenshot.py` (it uses sample data and never touches a real ledger)
+- Any new UI string must be added to the i18n table (`const EN`) — `tests/cjk_check.py` will fail otherwise
 
 ## Commit conventions
 

@@ -36,10 +36,13 @@ jobs:
         run: node tests/dashboard.test.js
 
       - name: Python 语法检查
-        run: python -m py_compile server.py tools/build-embed.py tools/check-links.py tools/sync-timeline.py tools/screenshot.py tests/smoke_test.py tests/safety_check.py
+        run: python -m py_compile server.py tools/build-embed.py tools/check-links.py tools/sync-timeline.py tools/screenshot.py tests/smoke_test.py tests/safety_check.py tests/cjk_check.py
 
       - name: 服务冒烟测试（跨平台，无需 bash / curl）
         run: python tests/smoke_test.py
 
       - name: 开源安全与隐私检查
         run: python tests/safety_check.py
+
+      - name: 英文界面不得含中文（渲染后 DOM 守卫）
+        run: python tests/cjk_check.py

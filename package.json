@@ -7,12 +7,13 @@
     "test": "node tests/dashboard.test.js",
     "test:smoke": "python tests/smoke_test.py",
     "test:safety": "python tests/safety_check.py",
-    "check": "node tests/dashboard.test.js && python tests/smoke_test.py && python tests/safety_check.py",
+    "check": "node tests/dashboard.test.js && python tests/smoke_test.py && python tests/safety_check.py && python tests/cjk_check.py",
     "start": "python server.py",
     "shots": "python tools/screenshot.py",
     "check-links": "python tools/check-links.py",
     "timeline": "python tools/sync-timeline.py",
-    "embed": "python tools/build-embed.py"
+    "embed": "python tools/build-embed.py",
+    "test:cjk": "python tests/cjk_check.py"
   },
   "keywords": [
     "job-kanban",

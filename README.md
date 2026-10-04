@@ -254,10 +254,11 @@ python tools/screenshot.py       # regenerate README screenshots from the sample
 ## Development
 
 ```bash
-make check              # lint + frontend tests + smoke test + safety check
+make check              # lint + frontend tests + smoke + safety + CJK guard
 npm test                # frontend regression tests only (112)
 npm run test:smoke      # server smoke test only (14)
 npm run test:safety     # open-source safety & privacy checks only (5)
+npm run test:cjk        # rendered English UI must contain no Chinese (needs Chrome)
 ```
 
 - Edit `dashboard.html` → just refresh the page (the server reads it per request)
@@ -311,6 +312,8 @@ Yes — click the **中文** button in the top-left. The choice is remembered (`
 </details>
 
 ## Design notes
+
+**The English UI is guarded by a test**: `tests/cjk_check.py` renders the dashboard with headless Chrome and fails if any CJK character appears in visible text or in `placeholder`/`title`/`aria-label`. Data keys and stage values are exempt by design — they are never rendered raw in the English UI.
 
 **Single-file frontend**: double-click to run, no build step, easy to fork. The trade-off is that the HTML embeds a fallback dataset — run `tools/build-embed.py` after changing it.
 

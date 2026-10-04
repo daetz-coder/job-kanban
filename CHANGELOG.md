@@ -16,11 +16,15 @@ All notable changes to this project are documented here. The format follows [Kee
 - i18n layer: `T()` / `TT()` for strings, `localize()` for rendered HTML (translates text nodes and `placeholder`/`title` only — never `value`, so data can't be corrupted), plus regex rules for dynamic text.
 - Language toggle button and URL hash deep links (`#list`, `#pos`, `#issue`).
 - 12 new i18n regression tests (112 total).
+- `tests/cjk_check.py`: renders the dashboard with headless Chrome and fails if the English UI contains any Chinese — wired into `make check` and CI.
 
 ### Fixed
 
 - Status `<option>` elements now carry explicit `value` attributes, so translating their labels cannot change the stored value.
 - `renderFileStatus()` is wrapped so its output is translated on every call path.
+- `localize()` now also translates the trailing text node of a container (previously only text followed by a tag).
+- Rule order: specific rules (`停滞 ≥7天`) now run before generic ones, so dynamic text is not partially translated.
+- Static datalists (résumé version, channel) and the link-badge `title` are now English; the language toggle reads "Chinese"/"English" so the English UI has zero Chinese characters.
 
 ## [1.0.1] - 2026-10-04
 
