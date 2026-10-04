@@ -100,35 +100,53 @@ def main():
         else:
             sys.exit('server did not start')
 
-        dom = subprocess.run(
-            [browser, '--headless=new', '--disable-gpu', '--no-first-run',
-             '--virtual-time-budget=4000', '--dump-dom', url],
-            capture_output=True, timeout=120).stdout.decode('utf-8', 'replace')
-        if args.dump:
-            io.open(args.dump, 'w', encoding='utf-8').write(dom)
+        # 覆盖所有视图：看板 / 列表 / 按岗位 / 首次访问引导
+        # 每个视图附带一个「必须出现」的标志，防止视图没渲染导致的假通过
+        views = [
+            ('board',    url,                'class="col"'),
+            ('list',     url + '#list',      '<table>'),
+            ('position', url + '#pos',       'kcard grouped'),
+            ('onboard',  url + '#onboard',   'class="onb show"'),   # 必须真的可见
+        ]
+        seen, uniq, missing = set(), [], []
+        for name, u, marker in views:
+            dom = subprocess.run(
+                [browser, '--headless=new', '--disable-gpu', '--no-first-run',
+                 '--virtual-time-budget=4000', '--dump-dom', u],
+                capture_output=True, timeout=120).stdout.decode('utf-8', 'replace')
+            if args.dump:
+                io.open(args.dump.replace('.html', '-%s.html' % name), 'w', encoding='utf-8').write(dom)
 
-        body = re.sub(r'<script[\s\S]*?</script>', '', dom)
-        body = re.sub(r'<style[\s\S]*?</style>', '', body)
+            body = re.sub(r'<script[\s\S]*?</script>', '', dom)
+            body = re.sub(r'<style[\s\S]*?</style>', '', body)
 
-        hits = []
-        for m in re.finditer(r'>([^<>]+)<', body):
-            s = m.group(1).strip()
-            if s and CJK.search(s):
-                hits.append('text: ' + s)
-        for m in re.finditer(r'(placeholder|title|aria-label)="([^"]*)"', body):
-            if CJK.search(m.group(2)):
-                hits.append('%s: %s' % (m.group(1), m.group(2)))
+            if marker not in body:
+                missing.append('%s (expected marker: %s)' % (name, marker))
 
-        seen, uniq = set(), []
-        for h in hits:
+            for m in re.finditer(r'>([^<>]+)<', body):
+                s = m.group(1).strip()
+                if s and CJK.search(s):
+                    uniq.append('[%s] text: %s' % (name, s))
+            for m in re.finditer(r'(placeholder|title|aria-label)="([^"]*)"', body):
+                if CJK.search(m.group(2)):
+                    uniq.append('[%s] %s: %s' % (name, m.group(1), m.group(2)))
+
+        dedup = []
+        for h in uniq:
             if h not in seen:
                 seen.add(h)
-                uniq.append(h)
+                dedup.append(h)
 
-        print('Rendered English UI — CJK occurrences: %d' % len(uniq))
-        for h in uniq:
+        if missing:
+            print('FAIL: these views did not render as expected:')
+            for m in missing:
+                print('  [MISSING] ' + m)
+            return 1
+
+        print('Rendered English UI (%d views) — CJK occurrences: %d' % (len(views), len(dedup)))
+        for h in dedup:
             print('  [CJK] ' + h)
-        if uniq:
+        if dedup:
             print('\nFAIL: the English UI still contains Chinese text')
             return 1
         print('OK: no Chinese text in the rendered English UI')

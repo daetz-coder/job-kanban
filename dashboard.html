@@ -3,6 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#2f6fed">
+<meta name="color-scheme" content="light">
+<meta name="description" content="Local-first job-application kanban: drag cards to advance stages, data stays in a plain JSON file you own.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="docs/icons/favicon-32.png">
+<link rel="apple-touch-icon" href="docs/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Job Kanban">
 <title>投递看板 · 2027 届校招 AI Agent</title>
 <style>
   :root{
@@ -23,6 +31,18 @@
   .brand .sub{font-size:12px;color:var(--muted);margin-top:2px}
   .side-sec{display:flex;flex-direction:column;gap:8px}
   .langbtn{margin-top:8px;font-size:12px;padding:5px 10px;align-self:flex-start}
+  /* 首次访问引导（在线版：选择数据存放方式） */
+  .onb{position:fixed;inset:0;background:rgba(18,22,30,.45);display:none;align-items:center;justify-content:center;z-index:60;padding:20px}
+  .onb.show{display:flex}
+  .onb-card{background:var(--card);border-radius:14px;max-width:520px;width:100%;padding:22px;box-shadow:0 12px 40px rgba(10,20,40,.25)}
+  .onb-card h2{font-size:17px;margin-bottom:6px}
+  .onb-card p.lead{font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6}
+  .onb-opt{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-bottom:8px;cursor:pointer}
+  .onb-opt:hover{border-color:var(--brand);background:var(--brand-soft)}
+  .onb-opt b{font-size:13.5px}
+  .onb-opt span{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+  .onb-actions{display:flex;justify-content:space-between;align-items:center;margin-top:14px;gap:8px}
+  .onb-note{font-size:11.5px;color:var(--muted)}
   .side-h{font-size:11.5px;color:var(--muted);font-weight:700;letter-spacing:.4px}
   .side-sec input[type=search],.side-sec select{width:100%;padding:7px 10px;border:1px solid var(--line);
            border-radius:8px;font-size:13px;background:#fff;color:var(--ink)}
@@ -260,6 +280,29 @@
 <datalist id="dlResume">
   <option>v1 general</option><option>v2 Agent-focused</option>
 </datalist>
+
+<div class="onb" id="onb">
+  <div class="onb-card">
+    <h2>Welcome to Job Kanban</h2>
+    <p class="lead">This page runs entirely in your browser — nothing is uploaded. Choose where your data should live:</p>
+    <div class="onb-opt" id="onbBind">
+      <span style="font-size:18px;line-height:1">📄</span>
+      <span><b>Bind a local JSON file</b><span>Recommended · every change is written straight to the file you pick (Chrome / Edge)</span></span>
+    </div>
+    <div class="onb-opt" id="onbLocal">
+      <span style="font-size:18px;line-height:1">💾</span>
+      <span><b>Keep it in this browser</b><span>No file access needed · export a JSON backup any time</span></span>
+    </div>
+    <div class="onb-opt" id="onbImport">
+      <span style="font-size:18px;line-height:1">📥</span>
+      <span><b>Import an existing ledger</b><span>Pick a ledger.json you already have</span></span>
+    </div>
+    <div class="onb-actions">
+      <span class="onb-note">Want autosave to disk on your own machine instead? Clone the repo and run <code>python server.py</code>.</span>
+      <button class="btn" id="onbClose" type="button">Start</button>
+    </div>
+  </div>
+</div>
 
 <div class="toast" id="toast"><span id="toastMsg"></span><button id="toastUndo" style="display:none">撤销</button></div>
 
@@ -1472,8 +1515,8 @@ function kcardGroup(a, ci){
       ${meta.length?`<div class="prow-m">${meta.map(esc).join(' · ')}</div>`:''}
       <div class="prow-a">
         <select data-posstatus="1" data-ci="${ci}" data-pi="${pi}">${opts}</select>
-        <button class="mini" data-posadv="1" data-ci="${ci}" data-pi="${pi}" title="推进状态 / Advance">→</button>
-        <button class="mini" data-posedit="1" data-ci="${ci}" data-pi="${pi}" title="编辑 / Edit">✎</button>
+        <button class="mini" data-posadv="1" data-ci="${ci}" data-pi="${pi}" title="推进状态">→</button>
+        <button class="mini" data-posedit="1" data-ci="${ci}" data-pi="${pi}" title="编辑">✎</button>
       </div>
     </div>`;
   }).join('');
@@ -1583,6 +1626,7 @@ function renderDatalists(){
    - 弹窗/提示走 ask()/warn()/toast()，支持 {x} 占位符
 */
 const LANG_KEY = 'jobkanban_lang';
+let FORCE_ONBOARD = false;      // #onboard：在 syncHash 改写 hash 之前捕获
 let lang = 'en';
 try{ const _v = localStorage.getItem(LANG_KEY); if(_v === 'zh' || _v === 'en') lang = _v; }catch(e){}
 
@@ -1631,7 +1675,7 @@ const EN = {
   '选择仓库里的 投递台账.json；之后每次改动都会自动写入该文件':'Pick your ledger.json; every change is written to it automatically',
   /* 看板与卡片 */
   '面试中':'Interviewing','已结束':'Closed','投递 ↗':'Apply ↗','打开 ↗':'Open ↗','编辑':'Edit',
-  '推进':'Advance','推进状态 →':'Advance →','删除':'Delete','删除岗位':'Remove position','保存':'Save',
+  '推进':'Advance','推进状态':'Advance','推进状态 →':'Advance →','删除':'Delete','删除岗位':'Remove position','保存':'Save',
   '取消':'Cancel','整列都是投放区':'Drop anywhere in this column','没有匹配的记录':'No matching records',
   '暂无状态变更记录（推进状态后自动记录）':'No status changes yet (recorded automatically)',
   '逾期':'Overdue','待办逾期':'Overdue','可访问':'OK','无链接':'No link','未检测':'Not checked',
@@ -1729,6 +1773,7 @@ const EN_RULES = [
   [/^停滞 (.+)$/,              function(m, v){ return 'Stale ' + T(v); }],
   [/^(\d+) 个岗位$/,           function(m, n){ return n + ' positions'; }],
   [/^· (\d+) 个岗位$/,         function(m, n){ return '· ' + n + ' positions'; }],
+  [/^(.+) · (\d+) 个岗位$/,     function(m, name, n){ return name + ' · ' + n + ' positions'; }],
   [/^拖到这里 = 设为「(.+)」$/,  function(m, s){ return 'Drop to set "' + T(s) + '"'; }],
   [/^投 (.+)$/,                function(m, d){ return 'Applied ' + d; }],
   [/^更新 (.+)$/,              function(m, d){ return 'Updated ' + d; }],
@@ -2043,6 +2088,7 @@ function exportJSON(){ download('投递台账.json', JSON.stringify(state,null,2
 /* URL hash 深链：支持 #list / #board、#pos / #co、#issue，便于分享与截图 */
 function applyHash(){
   try{
+    if(typeof location !== 'undefined') FORCE_ONBOARD = /onboard/.test(location.hash || '');
     if(typeof location === 'undefined' || !location.hash) return;
     location.hash.replace('#','').split(/[,+&\s]+/).filter(Boolean).forEach(p=>{
       if(p === 'list' || p === 'board') view = p;
@@ -2305,6 +2351,44 @@ document.getElementById('resetBtn').addEventListener('click', ()=>{
 document.getElementById('bindFileBtn').addEventListener('click', bindFile);
 restoreFileHandle();
 /* 若由 serve_dashboard.py 提供页面 → 自动启用「服务器自动保存」 */
+/* ---------- PWA：注册 service worker（仅在线版；本地服务模式不需要离线缓存） ---------- */
+function initPWA(){
+  try{
+    if(serverMode) return;
+    if(typeof navigator === 'undefined' || !navigator.serviceWorker) return;
+    if(typeof location === 'undefined' || !/^https?:$/.test(location.protocol)) return;
+    navigator.serviceWorker.register('sw.js').catch(function(){});
+  }catch(e){}
+}
+
+/* ---------- 首次访问引导（在线版：选择数据存放方式） ---------- */
+const ONB_KEY = 'jobkanban_onboarded';
+function showOnboard(force){
+  const el = document.getElementById('onb');
+  if(!el) return;
+  el.classList.add('show');
+}
+function hideOnboard(){
+  const el = document.getElementById('onb');
+  if(el) el.classList.remove('show');
+  try{ localStorage.setItem(ONB_KEY, '1'); }catch(e){}
+}
+function initOnboard(){
+  const forced = FORCE_ONBOARD;                           // 在 syncHash 改写 hash 前已捕获
+  if(serverMode && !forced) return;                       // 服务模式无需引导（#onboard 可强制预览）
+  let seen = false;
+  try{ seen = localStorage.getItem(ONB_KEY) === '1'; }catch(e){}
+  if(!seen || forced) showOnboard(forced);
+  const bind = document.getElementById('onbBind');
+  const loc = document.getElementById('onbLocal');
+  const imp = document.getElementById('onbImport');
+  const close = document.getElementById('onbClose');
+  if(bind) bind.addEventListener('click', ()=>{ hideOnboard(); bindFile(); });
+  if(loc) loc.addEventListener('click', hideOnboard);
+  if(imp) imp.addEventListener('click', ()=>{ hideOnboard(); const f = document.getElementById('importFile'); if(f) f.click(); });
+  if(close) close.addEventListener('click', hideOnboard);
+}
+
 detectServer().then(()=>{
   if(serverMode){
     render();
@@ -2316,6 +2400,8 @@ detectServer().then(()=>{
     toast('本地数据比文件新，正在写回文件…');
   }
   render();
+  initPWA();
+  initOnboard();
 });
 
 /* 供测试/控制台调用 */
@@ -2331,6 +2417,7 @@ window.__app = { get state(){return state;}, get view(){return view;}, setView(v
   fsSupported, bindFile, writeToFile, scheduleFileWrite, renderFileStatus,
   detectServer, pushToServer, flushSync, diffSince, putRecord, deleteRecord, postFull,
   localize, T, TT, applyLang, get lang(){ return lang; },
+  showOnboard, hideOnboard, initPWA, initOnboard, get forceOnboard(){ return FORCE_ONBOARD; },
   get serverMode(){ return serverMode; } };
 </script>
 </body>

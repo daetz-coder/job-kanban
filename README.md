@@ -20,8 +20,56 @@
 
 > **Language**: the UI ships in **English** with a one-click 中文 toggle (top-left). Data keys and stage values stay in Chinese so existing ledgers keep working — see [Data format](#data-format).
 
+## Install
+
+Five ways in — pick whichever fits. **None of them upload your data anywhere.**
+
+| Way | How | Needs | Autosave to disk |
+|---|---|---|---|
+| **Online (PWA)** | <https://daetz-coder.github.io/job-kanban/> | a browser | Chrome/Edge: bind a local file |
+| **Download & run** | [Releases](../../releases) → `job-kanban-windows.exe` · `-macos` · `-linux` | nothing | ✅ (next to the binary) |
+| **One command** | `uvx job-kanban` or `pipx run job-kanban` | Python 3.8+ | ✅ |
+| **From source** | `git clone … && python server.py` | Python 3.8+ | ✅ |
+| **Single file** | [Releases](../../releases) → `job-kanban-standalone.html` | a browser | export / import JSON |
+
+### Online — installable, works offline
+
+Open <https://daetz-coder.github.io/job-kanban/>, then use your browser's **Install app** (or *Add to Home Screen* on mobile): it gets an icon, runs full-screen and works offline. Everything happens in your browser — nothing is uploaded.
+
+In **Chrome / Edge** you can click **Bind a local JSON file** and every change is written straight to the file you pick (the same autosave you get from the local server). Other browsers fall back to export / import.
+
+### Download & run — no Python needed
+
+Grab the binary for your OS from [Releases](../../releases) and run it; the browser opens automatically and the ledger is created next to the binary in `data/ledger.json`.
+
+```bash
+job-kanban-windows.exe            # Windows
+./job-kanban-macos                # macOS (right-click → Open the first time: unsigned)
+./job-kanban-linux                # Linux
+```
+
+### One command — for developers
+
+```bash
+uvx job-kanban        # or: pipx run job-kanban
+job-kanban --port 9000 --data ~/my-ledger.json
+```
+
+### From source
+
+```bash
+git clone https://github.com/daetz-coder/job-kanban.git
+cd job-kanban
+python server.py
+```
+
+### Single file — the simplest possible artifact
+
+Download `job-kanban-standalone.html` and double-click it. Frontend-only: data lives in browser storage, use **Export** / **Import** for backups.
+
 ## Table of contents
 
+- [Install](#install)
 - [Why this exists](#why-this-exists)
 - [Features](#features)
 - [Quick start](#quick-start)
@@ -155,9 +203,13 @@ cd /path/to/private-repo && git add ledger.json && git commit -m "applications 2
 ```
 job-kanban/
 ├── dashboard.html            # the kanban (single file: UI + logic + fallback data)
-├── server.py                 # local server (static page + per-record API, stdlib only)
+├── manifest.webmanifest      # PWA manifest (installable, offline)
+├── sw.js                     # service worker (caches the shell, never /api)
+├── server.py                 # repo entry point (thin shim)
+├── src/job_kanban/           # server implementation (the installable package)
+├── packaging/                # PyInstaller spec + package-data staging
 ├── start.bat / start.sh      # one-click launch (Windows / macOS·Linux)
-├── Makefile                  # run / test / check / shots / clean
+├── Makefile                  # run / test / check / shots / release
 ├── data/
 │   ├── sample-ledger.json    # sample data (12 fictional companies, committable)
 │   └── ledger.json           # your ledger (gitignored)
@@ -254,11 +306,14 @@ python tools/screenshot.py       # regenerate README screenshots from the sample
 ## Development
 
 ```bash
-make check              # lint + frontend tests + smoke + safety + CJK guard
+make check              # lint + test + smoke + safety + CJK + packaging
 npm test                # frontend regression tests only (112)
 npm run test:smoke      # server smoke test only (14)
 npm run test:safety     # open-source safety & privacy checks only (5)
 npm run test:cjk        # rendered English UI must contain no Chinese (needs Chrome)
+npm run test:packaging  # entry points, frozen paths, version consistency (6)
+
+make release            # how a release is produced (see .github/workflows/release.yml)
 ```
 
 - Edit `dashboard.html` → just refresh the page (the server reads it per request)
@@ -268,6 +323,12 @@ npm run test:cjk        # rendered English UI must contain no Chinese (needs Chr
 Want to change stages, metrics, custom fields or the theme? See the **[customization guide](docs/CUSTOMIZATION.md)**. Architecture and trade-offs: **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
 
 ## FAQ
+
+<details>
+<summary><b>Which install should I pick?</b></summary>
+
+For a quick look: the **online version** (a link, nothing to install — Chrome/Edge can bind a local file for autosave). For everyday use on your own machine: **the binary from Releases** or `python server.py` from a clone. For scripting/automation: `uvx job-kanban`. See [Install](#install).
+</details>
 
 <details>
 <summary><b>Where is my data, and can it be lost?</b></summary>

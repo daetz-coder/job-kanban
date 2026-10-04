@@ -1,0 +1,28 @@
+feat: 四种分发形态（v1.2.0）
+
+① PWA 在线版
+- manifest.webmanifest + sw.js（缓存外壳，绝不缓存 /api）+ 生成的图标（192/512/maskable/apple/favicon）
+- 可安装成应用、离线可用；首次访问引导选择数据存放方式（绑定本地文件 / 浏览器本地 / 导入台账）
+- #onboard 深链可预览引导页
+
+② 免安装可执行文件
+- packaging/job-kanban.spec（PyInstaller 单文件，内置 dashboard/manifest/sw/icons/示例数据）
+- .github/workflows/release.yml：打 tag 时三平台构建 + 对产物冒烟测试 + 上传 Release
+- 冻结模式路径解析：数据写在可执行文件同级，资源从 _MEIPASS 读取
+
+③ uvx / pipx 一行命令
+- 实现迁移到 src/job_kanban/（可安装包），server.py 变为薄垫片（CLI 不变）
+- pyproject.toml：job-kanban 控制台脚本、零依赖、package-data 声明
+- packaging/stage_package_data.py：构建前把根目录资源暂存进包（仓库只保留一份源）
+
+④ 单文件 HTML
+- 每次发布附带 job-kanban-standalone.html
+
+配套
+- tests/packaging_check.py（6 项）：两个入口、冻结路径、暂存往返、版本一致性
+- --version 参数；端口占用友好提示；README 中英双版新增 Install 章节
+
+修复
+- syncHash() 启动时改写 hash 导致 #onboard 永不显示（改为改写前捕获标志）
+- CJK 守卫的引导页校验改为要求真的可见（class 含 show），此前是假通过
+- CJK 守卫从 1 个视图扩展到 4 个（看板 / 列表 / 按岗位 / 引导页）

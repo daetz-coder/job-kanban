@@ -2,6 +2,34 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] - 2026-10-04
+
+### Added
+
+**Four distribution channels** — all local-first, none of them upload anything:
+
+- **PWA / online version**: `manifest.webmanifest`, a service worker that caches the app shell but **never** `/api`, generated icons, installable as an app (works offline), and a first-run onboarding that asks where your data should live (bind a local JSON file / keep it in the browser / import an existing ledger).
+- **Standalone executable**: `packaging/job-kanban.spec` plus a release workflow that builds Windows / macOS / Linux binaries with PyInstaller, smoke-tests each one, and attaches them to the GitHub Release. The ledger is created next to the binary.
+- **Python package**: `pyproject.toml` with a `job-kanban` console script, so `uvx job-kanban` / `pipx run job-kanban` work. The implementation moved to `src/job_kanban/`; `server.py` is now a thin repo entry point (same CLI).
+- **Single-file HTML**: every release also ships `job-kanban-standalone.html`.
+
+**Tests & tooling**
+
+- `tests/packaging_check.py` (6 checks): both entry points, frozen (PyInstaller) path resolution, package-data staging round trip, and version consistency across `job_kanban.__version__` / `pyproject.toml` / `package.json`.
+- `#onboard` deep link to preview the onboarding; `--version` flag.
+- Friendly message when the port is already in use (instead of a traceback).
+
+### Changed
+
+- Resource lookup now handles three layouts: git clone, installed wheel, PyInstaller bundle.
+- Ledger location: repo → `data/ledger.json`; binary → next to the executable; installed package → `~/.job-kanban/ledger.json`.
+
+### Fixed
+
+- `syncHash()` rewrote the URL hash during startup, so `#onboard` never appeared — the flag is now captured before the hash is rewritten.
+- The CJK guard's onboarding view now requires the overlay to be **visible** (`class="onb show"`), not merely present in the DOM; previously it passed without testing anything.
+- The CJK guard renders **four** views (board / list / by position / onboarding) instead of one.
+
 ## [1.1.1] - 2026-10-04
 
 ### Fixed
@@ -100,6 +128,7 @@ First public release.
 - **The on-disk file is authoritative, not localStorage**: localStorage gets wiped, differs per browser and can't go into git.
 - **JSON over SQLite**: for a single user with a few hundred records, git-diffability and portability matter more; the real risks are solved with per-record writes + a write lock + atomic replace.
 
+[1.2.0]: https://github.com/daetz-coder/job-kanban/releases/tag/v1.2.0
 [1.1.1]: https://github.com/daetz-coder/job-kanban/releases/tag/v1.1.1
 [1.1.0]: https://github.com/daetz-coder/job-kanban/releases/tag/v1.1.0
 [1.0.1]: https://github.com/daetz-coder/job-kanban/releases/tag/v1.0.1

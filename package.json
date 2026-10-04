@@ -1,19 +1,20 @@
 {
   "name": "job-kanban",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Local-first job-application kanban: single-file frontend, zero-dependency Python server, your data in a plain JSON file",
   "private": true,
   "scripts": {
     "test": "node tests/dashboard.test.js",
     "test:smoke": "python tests/smoke_test.py",
     "test:safety": "python tests/safety_check.py",
-    "check": "node tests/dashboard.test.js && python tests/smoke_test.py && python tests/safety_check.py && python tests/cjk_check.py",
+    "check": "node tests/dashboard.test.js && python tests/smoke_test.py && python tests/safety_check.py && python tests/cjk_check.py && python tests/packaging_check.py",
     "start": "python server.py",
     "shots": "python tools/screenshot.py",
     "check-links": "python tools/check-links.py",
     "timeline": "python tools/sync-timeline.py",
     "embed": "python tools/build-embed.py",
-    "test:cjk": "python tests/cjk_check.py"
+    "test:cjk": "python tests/cjk_check.py",
+    "test:packaging": "python tests/packaging_check.py"
   },
   "keywords": [
     "job-kanban",

@@ -4,7 +4,7 @@
 PY ?= python
 PORT ?= 8765
 
-.PHONY: help run test smoke safety cjk check lint shots links timeline embed clean
+.PHONY: help run test smoke safety cjk packaging check lint shots links timeline embed clean
 
 help:            ## 显示可用命令
 	@echo "job-tracker 可用命令："
@@ -13,6 +13,7 @@ help:            ## 显示可用命令
 	@echo "  make smoke     服务冒烟测试（启动 → 按条读写删 → 关掉）"
 	@echo "  make safety    开源安全与隐私检查"
 	@echo "  make cjk       渲染后 DOM 不得含中文（英文界面守卫）"
+	@echo "  make packaging 各分发形态自检（server.py / 模块 / 冻结路径 / 版本一致）"
 	@echo "  make lint      Python 语法检查"
 	@echo "  make check     lint + test + smoke + safety（提交前跑这个）"
 	@echo "  make shots     重新生成 README 截图（需 Chrome/Edge）"
@@ -36,10 +37,13 @@ safety:          ## 开源安全与隐私检查
 cjk:             ## 英文界面不得含中文（需 Chrome/Edge）
 	$(PY) tests/cjk_check.py
 
-lint:            ## Python 语法检查
-	$(PY) -m py_compile server.py tools/build-embed.py tools/check-links.py tools/sync-timeline.py tools/screenshot.py tests/smoke_test.py tests/safety_check.py tests/cjk_check.py
+packaging:       ## 各分发形态自检
+	$(PY) tests/packaging_check.py
 
-check: lint test smoke safety cjk ## 提交前完整检查
+lint:            ## Python 语法检查
+	$(PY) -m py_compile server.py tools/build-embed.py tools/check-links.py tools/sync-timeline.py tools/screenshot.py tests/smoke_test.py tests/safety_check.py tests/cjk_check.py tests/packaging_check.py
+
+check: lint test smoke safety cjk packaging ## 提交前完整检查
 
 shots:           ## 重新生成 README 截图
 	$(PY) tools/screenshot.py

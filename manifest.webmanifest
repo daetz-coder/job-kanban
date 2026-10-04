@@ -1,0 +1,26 @@
+{
+  "name": "Job Kanban",
+  "short_name": "Job Kanban",
+  "description": "Local-first job-application kanban: drag cards to advance stages, data stays in a plain JSON file you own.",
+  "lang": "en",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "browser"],
+  "orientation": "any",
+  "background_color": "#f5f6f8",
+  "theme_color": "#2f6fed",
+  "categories": ["productivity", "utilities"],
+  "icons": [
+    { "src": "docs/icons/favicon-32.png", "sizes": "32x32", "type": "image/png" },
+    { "src": "docs/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "docs/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "docs/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Board", "url": "./#board", "description": "Kanban board view" },
+    { "name": "List", "url": "./#list", "description": "Table view with search and filters" },
+    { "name": "By position", "url": "./#pos", "description": "Grouped cards, one per company" }
+  ]
+}

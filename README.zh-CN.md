@@ -21,8 +21,56 @@
 
 ---
 
+## 安装与获取
+
+五种方式，按方便程度选。**任何一种都不会把你的数据上传到任何地方。**
+
+| 方式 | 怎么做 | 需要什么 | 能自动写盘 |
+|---|---|---|---|
+| **在线版（PWA）** | 打开 <https://daetz-coder.github.io/job-kanban/> | 浏览器 | Chrome/Edge 可绑定本地文件 |
+| **下载即用** | [Releases](../../releases) 下载 `job-kanban-windows.exe` · `-macos` · `-linux` | 无需 Python | ✅（写在程序同级目录） |
+| **一行命令** | `uvx job-kanban` 或 `pipx run job-kanban` | Python 3.8+ | ✅ |
+| **从源码运行** | `git clone … && python server.py` | Python 3.8+ | ✅ |
+| **单文件** | [Releases](../../releases) 下载 `job-kanban-standalone.html` | 浏览器 | 导出 / 导入 JSON |
+
+### 在线版 —— 可"安装"成应用，离线可用
+
+打开链接后，用浏览器的 **安装应用**（手机上「添加到主屏幕」）：会有图标、全屏运行、离线可用。所有数据都在你自己的浏览器里，不上传。
+
+**Chrome / Edge** 下点 **绑定本地文件**，之后每次改动都会直接写入你选的那个 JSON（和本地服务模式一样自动保存）；其他浏览器用导出 / 导入。
+
+### 下载即用 —— 不用装 Python
+
+到 [Releases](../../releases) 下载对应系统的可执行文件，双击运行，浏览器自动打开，台账会建在程序同级的 `data/ledger.json`。
+
+```bat
+job-kanban-windows.exe            :: Windows
+./job-kanban-macos                :: macOS（未签名，首次需右键 → 打开）
+./job-kanban-linux                :: Linux
+```
+
+### 一行命令 —— 给开发者
+
+```bash
+uvx job-kanban        # 或 pipx run job-kanban
+job-kanban --port 9000 --data ~/my-ledger.json
+```
+
+### 从源码运行
+
+```bash
+git clone https://github.com/daetz-coder/job-kanban.git
+cd job-kanban
+python server.py
+```
+
+### 单文件 —— 最省事的形态
+
+下载 `job-kanban-standalone.html`，双击打开即可。纯前端：数据存在浏览器本地，用 **导出 / 导入** 做备份。
+
 ## 目录
 
+- [安装与获取](#安装与获取)
 - [为什么做这个](#为什么做这个)
 - [功能](#功能)
 - [快速开始](#快速开始)
@@ -159,7 +207,11 @@ git add ledger.json && git commit -m "投递进度 2026-10-04"
 ```
 job-kanban/
 ├── dashboard.html            # 看板（单文件：界面 + 逻辑 + 兜底数据）
-├── server.py                 # 本地服务（静态页 + 按条写入 API，仅标准库）
+├── manifest.webmanifest      # PWA 清单（可安装、离线可用）
+├── sw.js                     # Service Worker（缓存外壳，绝不缓存 /api）
+├── server.py                 # 仓库入口（薄垫片）
+├── src/job_kanban/           # 服务实现（可安装的 Python 包）
+├── packaging/                # PyInstaller spec + 打包资源暂存
 ├── start.bat / start.sh      # 一键启动（Windows / macOS·Linux）
 ├── Makefile                  # 常用命令（run / test / check / shots / clean）
 ├── data/
@@ -170,11 +222,13 @@ job-kanban/
 │   ├── check-links.py        # 批量检测投递链接可访问性
 │   ├── sync-timeline.py      # 生成 Markdown 时间线视图
 │   └── screenshot.py         # 用 headless Chrome 重新生成 README 截图
-├── docs/                     # 截图、架构说明、自定义指南
+├── docs/                     # 截图、图标、架构说明、自定义指南
 └── tests/
-    ├── dashboard.test.js     # 100 项回归测试（Node + DOM 桩，无需浏览器）
+    ├── dashboard.test.js     # 112 项回归测试（Node + DOM 桩，无需浏览器）
     ├── smoke_test.py         # 14 项服务冒烟测试（跨平台，无需 bash/curl）
-    └── safety_check.py       # 5 项开源安全与隐私检查
+    ├── safety_check.py       # 5 项开源安全与隐私检查
+    ├── cjk_check.py          # 守卫：渲染后的英文界面不得含中文
+    └── packaging_check.py    # 6 项分发自检（入口 / 冻结路径 / 版本一致）
 ```
 
 ## 配置
@@ -255,10 +309,12 @@ python tools/screenshot.py       # 用 headless Chrome 重新生成 README 截�
 ## 开发
 
 ```bash
-make check                        # 一键完整检查（语法 + 前端测试 + 冒烟 + 安全）
-npm test                          # 只跑前端回归测试（100 项）
-npm run test:smoke                # 服务冒烟测试（14 项，会临时起服务）
+make check                        # 一键完整检查（语法 + 前端 + 冒烟 + 安全 + CJK + 打包）
+npm test                          # 前端回归测试（112 项）
+npm run test:smoke                # 服务冒烟测试（14 项）
 npm run test:safety               # 开源安全与隐私检查（5 项）
+npm run test:cjk                  # 英文界面不得含中文（需 Chrome）
+npm run test:packaging            # 分发形态自检（6 项）
 ```
 
 - 改 `dashboard.html` 后**刷新页面即可**（服务每次请求实时读取文件，不用重启）

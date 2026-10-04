@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "job-kanban"
+version = "1.2.0"
+description = "Local-first job-application kanban: single-file frontend, zero-dependency Python server, your data in a plain JSON file"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [{ name = "job-kanban contributors" }]
+keywords = ["job-kanban", "job-tracker", "kanban", "campus-recruitment", "local-first", "python"]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Environment :: Console",
+  "Intended Audience :: End Users/Desktop",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Office/Business",
+  "Topic :: Utilities",
+]
+dependencies = []          # standard library only — this is a core design rule
+urls = { Homepage = "https://github.com/daetz-coder/job-kanban" }
+
+[project.scripts]
+job-kanban = "job_kanban:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+# dashboard.html / manifest / service worker / icons / sample data are copied into
+# the package by the release workflow before building, so an installed wheel is
+# self-contained. The repo keeps a single copy at the root (single source of truth).
+[tool.setuptools.package-data]
+job_kanban = [
+  "dashboard.html",
+  "manifest.webmanifest",
+  "sw.js",
+  "data/*.json",
+  "docs/icons/*.png",
+]

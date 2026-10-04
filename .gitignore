@@ -8,6 +8,20 @@ data/.backup/
 # 生成的时间线视图
 timeline*.md
 
+# 构建时暂存进包里的资源副本（由 packaging/stage_package_data.py 生成）
+src/job_kanban/dashboard.html
+src/job_kanban/manifest.webmanifest
+src/job_kanban/sw.js
+src/job_kanban/data/
+src/job_kanban/docs/
+
+# 构建产物
+dist/
+build/
+build-tmp/
+dist-bin/
+*.egg-info/
+
 # 运行时
 __pycache__/
 *.pyc
