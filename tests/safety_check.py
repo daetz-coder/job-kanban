@@ -8,7 +8,7 @@
 检查项：
   1. dashboard.html 内不得出现真实公司名（防止把个人投递数据带进公开仓库）
   2. 个人台账 data/ledger.json 不得被 git 跟踪
-  3. 被跟踪的文本文件里不得出现个人身份信息（姓名 / 手机号 / 邮箱等）
+  3. 被跟踪的文本文件里不得出现个人身份信息（通用规则 + 可选的本地 .pii-patterns）
   4. 示例数据里的公司名必须是虚构的
 """
 import io
@@ -35,13 +35,30 @@ REAL_COMPANIES = [
     '月之暗面', '零一万物', '百川智能', '阶跃星辰', '面壁智能', '淘天集团',
 ]
 
-# 个人身份信息特征
+# Generic personal-identifier patterns (safe to publish: they describe shapes, not values)
 PII_PATTERNS = [
-    (r'1[3-9]\d{9}', 'phone'),
+    (r'1[3-9]\d{9}', 'phone number'),
     (r'[\w.+-]+@(qq|163|126|gmail|outlook|foxmail)\.com', 'personal email'),
-    (r'NAME', 'name'),
-    (r'SCHOOL', 'school'),
+    (r'\b\d{17}[\dXx]\b', 'ID card number'),
 ]
+
+# Your own private strings (name, school, employer…) belong in a LOCAL, gitignored file:
+#   .pii-patterns   — one literal per line, '#' for comments
+# See .pii-patterns.example. Nothing from that file is ever committed.
+PII_FILE = os.path.join(HERE, '.pii-patterns')
+
+
+def local_pii_patterns():
+    out = []
+    if os.path.exists(PII_FILE):
+        try:
+            for line in io.open(PII_FILE, encoding='utf-8'):
+                v = line.strip()
+                if v and not v.startswith('#'):
+                    out.append((re.escape(v), 'local rule #%d' % (len(out) + 1)))
+        except Exception:
+            pass
+    return out
 
 # 允许出现真实公司名的地方（黑名单守卫本身、示例数据的虚构声明）
 ALLOWLIST_FILES = {
@@ -109,7 +126,7 @@ def main():
         text = read_text(rel)
         if text is None:
             continue
-        for pattern, label in PII_PATTERNS:
+        for pattern, label in PII_PATTERNS + local_pii_patterns():
             if re.search(pattern, text):
                 pii_hits.append('%s(%s)' % (rel, label))
     check('No personal identifiers in tracked files', not pii_hits, ', '.join(pii_hits[:5]))

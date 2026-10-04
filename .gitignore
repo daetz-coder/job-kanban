@@ -22,6 +22,9 @@ build-tmp/
 dist-bin/
 *.egg-info/
 
+# 本地私有隐私清单（不入库）
+.pii-patterns
+
 # 运行时
 __pycache__/
 *.pyc
