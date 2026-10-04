@@ -217,7 +217,18 @@ def main():
         else:
             io.open(STATE, 'w', encoding='utf-8').write(json.dumps({'meta': {}, 'applications': []}, ensure_ascii=False, indent=2))
 
-    with Server(('127.0.0.1', PORT), Handler) as httpd:
+    try:
+        httpd = Server(('127.0.0.1', PORT), Handler)
+    except OSError as e:
+        msg = str(e).lower()
+        if 'in use' in msg or getattr(e, 'errno', None) in (48, 98, 10048):
+            print('Port %d is already in use.' % PORT)
+            print('  * Job Kanban may already be running — just open: http://127.0.0.1:%d/' % PORT)
+            print('  * Or start it on another port:  python server.py --port %d' % (PORT + 1))
+            sys.exit(1)
+        raise
+
+    with httpd:
         url = 'http://127.0.0.1:%d/' % PORT
         print('Job Kanban is running at %s' % url)
         print('Ledger file: %s' % STATE)
