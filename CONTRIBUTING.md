@@ -1,89 +1,83 @@
-# 贡献指南
+# Contributing
 
-感谢愿意一起改进这个工具 🙌
+Thanks for wanting to improve this tool 🙌
 
-## 开始之前
+## Before you start
 
-请先读一下 [README 的设计取舍](README.md#设计取舍)。本项目的三条底线：
+Please read the [design notes](README.md#design-notes) first. Three ground rules:
 
-1. **零运行时依赖** —— 前端纯 vanilla JS（单文件），后端仅 Python 标准库。PR 不要引入 npm / pip 运行时依赖。
-2. **不丢数据** —— 任何涉及写入、导入、合并、重置的改动，必须考虑：会不会覆盖别人的数据？失败时能不能回退？
-3. **不自动改动记录数** —— 不要在加载时静默合并 / 删除记录（历史上出过真实事故）。
+1. **No runtime dependencies** — the frontend is plain vanilla JS in a single file; the backend uses the Python standard library only. Don't add npm/pip runtime deps.
+2. **Never lose data** — any change touching writes, import, merging or reset must answer: could it overwrite someone's data? Can it be undone on failure?
+3. **Never change record counts automatically** — no silent merging or deleting on load (this caused a real data-loss incident in the past).
 
-## 开发环境
-
-```bash
-git clone https://github.com/daetz-coder/job-tracker.git
-cd job-tracker
-python server.py          # 启动本地服务（会自动用示例数据初始化）
-```
-
-无需安装依赖。Node 仅用于跑测试（Node 14+）。
-
-## 跑测试
+## Development setup
 
 ```bash
-make check              # 完整检查：语法 + 前端测试 + 冒烟测试 + 安全检查（推荐）
-npm test                # 只跑前端回归测试（100 项）
-npm run test:smoke      # 只跑服务冒烟测试（14 项）
-npm run test:safety     # 只跑开源安全与隐私检查（5 项）
+git clone https://github.com/daetz-coder/job-kanban.git
+cd job-kanban
+python server.py          # starts the local server (initialises from sample data)
 ```
 
-测试用最小 DOM 桩直接执行 `dashboard.html` 里的脚本，**不需要浏览器**，几百毫秒跑完。
+No dependencies to install. Node is only needed for the tests (Node 14+).
 
-- 断言必须**与数据量无关**（示例数据只有 12 条也能跑），不要写死「50 家」这类数字
-- 新增功能请补测试；修 bug 请先写一个能复现的断言
-- 界面改动请用 `python tools/screenshot.py` 重新生成截图（它用示例数据起临时服务，不会碰真实台账）
+## Running the tests
 
-## 提交规范
-
-采用 [Conventional Commits](https://www.conventionalcommits.org/)：
-
-```
-feat: 新增 xxx
-fix: 修复 xxx
-docs: 更新 xxx
-refactor: 重构 xxx
-test: 补充 xxx
-chore: 杂项
+```bash
+make check              # full: lint + frontend tests + smoke test + safety check
+npm test                # frontend regression tests only (112)
+npm run test:smoke      # server smoke test only (14)
+npm run test:safety     # open-source safety & privacy checks only (5)
 ```
 
-示例：
+The tests execute the page script against minimal DOM stubs — **no browser needed**, and they finish in a few hundred milliseconds.
+
+- Assertions must be **data-size independent** (the 12-record sample data must pass) — don't hard-code "50 companies"
+- Add tests for new features; for bug fixes, write a failing assertion first
+- For UI changes, regenerate the screenshots with `python tools/screenshot.py` (it uses sample data and never touches a real ledger)
+
+## Commit conventions
+
+We use [Conventional Commits](https://www.conventionalcommits.org/):
 
 ```
-feat: 看板支持按「城市」泳道分组
-fix: 拖拽跨天回退时状态历史未抵消
-docs: 补充 API 示例
+feat: add a "city" lane grouping
+fix: cancel out same-day status reversals in history
+docs: document the per-record API
+refactor: split the sync layer
+test: cover the undo stack
+chore: bump CI matrix
 ```
 
-## Pull Request
+Commit messages and code comments may be in English or Chinese; user-facing UI text must go through the i18n layer (`const EN` in `dashboard.html`).
 
-1. Fork → 新建分支（`feat/xxx` 或 `fix/xxx`）
-2. 保证 `make check` 全绿
-3. 若改了界面，用 `python tools/screenshot.py` 重新生成截图并一并提交
-4. PR 描述里说明：**改了什么 / 为什么 / 怎么验证的**
-5. 如果改动涉及数据格式，请说明**向后兼容性**（老数据能否直接读）
+## Pull requests
 
-CI 会在 Ubuntu 与 Windows、多个 Node / Python 版本上跑测试，并检查：
+1. Fork → branch (`feat/xxx` or `fix/xxx`)
+2. `make check` must pass
+3. UI changes: regenerate screenshots and include them
+4. Describe **what / why / how you verified it**
+5. Schema changes: state the **backwards compatibility** (can old ledgers still load?)
 
-- 看板内不得含真实公司名（开源安全）
-- `data/ledger.json` 不得被提交（隐私）
+CI runs on Ubuntu (newest + oldest supported versions) and Windows, and also checks:
 
-## 报告问题
+- the dashboard must not contain real company names (open-source safety)
+- `data/ledger.json` must not be tracked (privacy)
 
-请用 [Issue 模板](https://github.com/daetz-coder/job-tracker/issues/new/choose)，并尽量附上：
+## Reporting issues
 
-- 操作系统 / 浏览器版本 / Python 版本
-- 复现步骤
-- 期望结果与实际结果
-- 相关日志或截图（**请先脱敏，不要贴真实投递数据**）
+Use the [issue templates](https://github.com/daetz-coder/job-kanban/issues/new/choose) and include:
 
-## 代码风格
+- OS / browser / Python version
+- Steps to reproduce
+- Expected vs. actual behaviour
+- Logs or screenshots (**redact personal data first**)
 
-- JavaScript：2 空格缩进、单引号、语句末尾不加分号后置风格保持一致（跟随现有文件）
-- Python：PEP 8、UTF-8、文件头 `# -*- coding: utf-8 -*-`
-- 注释与提交信息用中文（面向中文用户），变量名可中英混用（数据字段是中文键）
+## Code style
 
-## 安全
+- JavaScript: 2-space indent, single quotes, semicolons at statement ends (follow the existing file)
+- Python: PEP 8, UTF-8, `# -*- coding: utf-8 -*-` header
+- Chinese keys in the data schema are intentional — see [Data format](README.md#data-format)
 
-发现安全问题请勿公开提交 Issue，见 [SECURITY.md](SECURITY.md)。
+## Security
+
+Please don't open a public issue for security problems — see [SECURITY.md](SECURITY.md).

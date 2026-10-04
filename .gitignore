@@ -5,6 +5,9 @@ data/*.tmp
 data/.backup/
 *.local.json
 
+# 生成的时间线视图
+timeline*.md
+
 # 运行时
 __pycache__/
 *.pyc

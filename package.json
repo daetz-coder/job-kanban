@@ -1,7 +1,7 @@
 {
-  "name": "job-tracker",
-  "version": "1.0.1",
-  "description": "求职投递看板 —— 本地优先的投递管理工具（单文件前端 + 零依赖 Python 服务）",
+  "name": "job-kanban",
+  "version": "1.1.0",
+  "description": "Local-first job-application kanban: single-file frontend, zero-dependency Python server, your data in a plain JSON file",
   "private": true,
   "scripts": {
     "test": "node tests/dashboard.test.js",
@@ -15,6 +15,7 @@
     "embed": "python tools/build-embed.py"
   },
   "keywords": [
+    "job-kanban",
     "job-tracker",
     "kanban",
     "campus-recruitment",

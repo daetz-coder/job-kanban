@@ -1,138 +1,155 @@
-# 架构说明
+# Architecture
 
-## 总览
+## Overview
 
 ```
 ┌──────────────────────────┐         ┌───────────────────────────────┐
 │  dashboard.html          │  HTTP   │  server.py                    │
-│  （单文件前端，零依赖）    │ ──────► │  （Python 标准库，仅回环地址）  │
+│  (single file, zero deps)│ ──────► │  (Python stdlib, loopback)     │
 │                          │         │                               │
-│  · 状态机 / 看板渲染      │  PUT    │  · 按条写入 PUT /api/app/<id>  │
-│  · 拖拽 / 筛选 / 统计     │  DELETE │  · 整份替换 POST /api/state    │
-│  · 差异同步（只发变化）    │  POST   │  · 写锁 + 原子替换 + 写前备份   │
+│  · state machine, board  │  PUT    │  · per-record PUT /api/app/<id>│
+│  · drag / filter / stats │ DELETE  │  · full replace POST /api/state│
+│  · diff sync (only delta)│  POST   │  · write lock + atomic replace │
+│  · i18n layer (en/zh)    │         │  · pre-write backups           │
 └──────────┬───────────────┘         └───────────────┬───────────────┘
            │                                          │
-           │ 兜底（离线打开时）                          │ 读写
+           │ fallback (offline open)                   │ read/write
            ▼                                          ▼
-  内嵌示例数据 DEFAULT_DATA                    data/ledger.json（权威）
-  + localStorage（编辑态缓存）                  data/.backup/*.json（快照）
+  embedded DEFAULT_DATA                      data/ledger.json  (source of truth)
+  + localStorage (edit-time cache)           data/.backup/*.json (snapshots)
 ```
 
-## 数据流
+## Data flow
 
-### 启动
+### Startup
 
-1. `load()` 先读 localStorage；没有则用内嵌的 `DEFAULT_DATA`（示例数据）
-2. `detectServer()` 请求 `GET /api/state`（带 `X-File-Mtime`）
-3. **冲突判定**：比较「记录数 → 有进度数 → 岗位数」
-   - 磁盘更完整（或同样完整且不旧）→ 用磁盘数据，并记录已同步快照
-   - 浏览器更完整 → 保留浏览器数据，稍后整份写回磁盘
-4. `syncReady = true` —— **在此之前禁止任何写入**，避免用默认数据覆盖磁盘
+1. `load()` reads localStorage; if empty, it falls back to the embedded `DEFAULT_DATA` (sample data)
+2. `detectServer()` calls `GET /api/state` (which carries `X-File-Mtime`)
+3. **Conflict resolution** compares record count → progressed count → position count:
+   - file is more complete (or equally complete and not older) → use the file, remember it as the synced snapshot
+   - browser is more complete → keep it and push the whole state back later
+4. `syncReady = true` — **no writes are allowed before this**, so a default state can never overwrite the file
 
-### 编辑
+### Editing
 
-1. 任何操作改内存里的 `state`
-2. `save()` → `persist()`（写 localStorage + 每日首次快照）+ `render()` + 压入撤销栈
-3. `scheduleFileWrite()` 防抖 600ms → `flushSync()`
+1. Any interaction mutates `state` in memory
+2. `save()` → `persist()` (localStorage + a once-a-day snapshot) + `render()` + push onto the undo stack
+3. `scheduleFileWrite()` debounces 600 ms → `flushSync()`
 
-### 差异同步（核心）
+### Diff sync (the core)
 
-`flushSync()` 把当前 `state` 与「上次已同步快照」对比：
+`flushSync()` compares the current `state` against the last synced snapshot:
 
 ```
-变化的记录数 ≤ max(12, 总数 × 40%)  →  逐条 PUT / DELETE
-变化过多（导入 / 重置 / 首次同步）    →  整份 POST /api/state
+changed records ≤ max(12, total × 40%)  →  per-record PUT / DELETE
+more than that (import / reset / first) →  full POST /api/state
 ```
 
-因此**拖一张卡只会重写那一条记录**，物理上不可能覆盖别的记录。
+So **dragging one card rewrites exactly one record** — it is physically impossible for it to clobber another.
 
-## 为什么这样设计
+## Why it is built this way
 
-### 按条写入而不是整表提交
+### Per-record writes instead of whole-table commits
 
-最初实现是「每次改动 POST 整份状态」。问题：浏览器里的旧状态（或残缺状态）会把磁盘上更新的数据整体覆盖——真实发生过数据丢失。改成按条写入后，一条记录的改动只影响那一条。
+The first implementation POSTed the entire state on every change. A stale or incomplete browser state could then overwrite a newer file — which really happened, and lost data. With per-record writes, one record's change only affects that record.
 
-### 写锁 + 原子替换
+### Write lock + atomic replace
 
-- `threading.Lock` 串行化所有写入，多标签页 / 多进程同时改不会交错
-- 先写 `ledger.json.tmp` 再 `os.replace()` 原子替换，断电 / 崩溃也不会留下半截 JSON
-- 写前把旧文件复制到 `.backup/`，形成 50 份滚动快照
+- `threading.Lock` serialises all writes; concurrent tabs/processes can't interleave
+- write `ledger.json.tmp`, then `os.replace()` — a crash or power loss never leaves a half-written JSON
+- before each write, the previous file is copied into `.backup/`, giving 50 rolling snapshots
 
-### 为什么权威数据在磁盘
+### Why the on-disk file is authoritative
 
-localStorage 有三个致命问题：清缓存就没了、换浏览器 / 换电脑不同步、无法进 git。所以把它降级为「编辑态缓存」，磁盘 JSON 才是真相。
+localStorage has three fatal problems: clearing the cache wipes it, different browsers don't share it, and it can't go into git. So it is demoted to an edit-time cache; the on-disk JSON is the truth.
 
-### 为什么选 JSON 而不是 SQLite
+### Why JSON rather than SQLite
 
-| 维度 | JSON | SQLite |
+| Dimension | JSON | SQLite |
 |---|---|---|
-| git 可读 diff | ✅ 逐行可比 | ❌ 二进制 |
-| 人工查看 / 手改 | ✅ 记事本即可 | ❌ 需要工具 |
-| 事务 / 并发 | 靠写锁 + 原子替换 | ✅ 原生 |
-| 唯一约束 / 索引 | ❌ | ✅ |
-| 数据量 1000+ | 一般 | ✅ 更好 |
+| Readable git diffs | ✅ line by line | ❌ binary |
+| Inspect / hand-edit | ✅ any editor | ❌ needs a tool |
+| Transactions / concurrency | via write lock + atomic replace | ✅ native |
+| Unique constraints / indexes | ❌ | ✅ |
+| 1000+ records | okay | ✅ better |
 
-在「单人 + 几百条 + 要能 git 回看」的场景下，JSON 的综合收益更高；并发与覆盖风险已经用**按条写入 + 写锁 + 原子替换**解决。若将来要做多端同步，可以加一个 SQLite 后端作为可选实现（见路线图）。
+For "one person, a few hundred records, must be reviewable in git", JSON wins overall; the concurrency and overwrite risks are handled by **per-record writes + a write lock + atomic replace**. If multi-device sync is ever needed, a SQLite backend can be added as an optional implementation (see the roadmap).
 
-### 为什么不做自动合并同名公司
+### No automatic merging of same-name companies
 
-曾经实现过「加载时自动合并同名公司」，结果把用户**真实岗位记录**当作重复项丢弃（合并规则保留了先出现记录的默认岗位），造成数据丢失事故。现在的原则：
+An earlier version auto-merged same-name companies on load. It treated the user's **real position records** as duplicates and discarded them (the merge kept the first record's default position), losing data. The rule now:
 
-> **绝不自动改动记录数。** 任何合并 / 去重 / 删除都必须由用户显式触发并二次确认。
+> **Record counts are never changed automatically.** Any merge / dedupe / delete must be explicitly triggered by the user and confirmed.
 
-## 状态机
+## State machine
 
 ```
 PIPELINE = 未投递 → 已投递 → 综合素质评测 → 笔试 → 一面 → 二面 → 三面 → HR面 → offer
-TERMINAL = 已拒 / 放弃（任意阶段可终止）
+           (Not applied → Applied → Aptitude test → Written test → Interview 1..3 → HR → offer)
+TERMINAL = 已拒 / 放弃   (Rejected / Withdrawn — reachable from any stage)
 ```
 
-- 公司级状态 = 名下岗位**最靠前**的进度（`aggStatus`），完全由岗位推导，可升可降
-- 全部岗位终止时，公司状态取第一个终止态
-- 公司级投递日期 = 名下岗位最早的非空日期（`aggAppliedDate`）
-- 无岗位的公司直接用自身状态
+- Company-level status = the **most advanced** stage among its positions (`aggStatus`), derived purely from positions so it can move both up and down
+- If every position is terminal, the company takes the first terminal value
+- Company applied date = the earliest non-empty date among positions (`aggAppliedDate`)
+- Companies without positions use their own status
 
-## 状态历史去噪
+## Status-history denoising
 
-拖拽容易产生 `已投递→未投递` 这类来回记录。`compactHistory` 做三层处理：
+Dragging easily produces `已投递→未投递` style churn. `compactHistory` applies three layers:
 
-1. **同日精确回退**：同一天内 `A→B` 紧跟 `B→A`，两条一起抵消，并清掉当天自动写入的投递日期
-2. **按天净变化为零**：某天所有记录合并后起止状态相同 → 整天丢弃
-3. **相邻回退抵消 + 完全重复丢弃**
+1. **Same-day exact reversal**: `A→B` immediately followed by `B→A` on the same day — both are dropped, and the auto-filled applied date from that day is cleared
+2. **Whole-day net zero**: if a day's transitions net out to no change, the whole day is dropped
+3. **Adjacent reversals + exact duplicates**
 
-跨天的记录不合并（保留真实的时间轨迹）。
+Transitions across days are never merged (they are real history).
 
-## 前端结构（dashboard.html）
+## i18n layer
 
-| 区块 | 职责 |
+The UI is English by default with a 中文 toggle. Design:
+
+- **Data keys and stage values stay Chinese** (`企业`, `投递状态`, `未投递`, …) — the schema never changes, so existing ledgers keep working
+- `T(s)` translates an exact string, then tries `EN_RULES` (regex rules for text containing numbers/names)
+- `TT(tpl, vars)` handles templates with `{x}` placeholders (dialogs, toasts)
+- `localize(html)` translates **text nodes and `placeholder`/`title` only**. It deliberately never touches `value="…"` attributes or `<textarea>` content, so display translation can never corrupt data
+- Every `<option>` for a data value carries an explicit `value="…"`, so translating its label can't change what gets saved
+- `applyLang()` runs at the end of `render()`, re-localising the known containers; static chrome is handled once at startup by a text-node walk (which preserves event listeners)
+- Switching language persists the choice and reloads
+
+## Frontend structure (dashboard.html)
+
+| Section | Responsibility |
 |---|---|
-| `PIPELINE / TERMINAL / BOARD / BADGE` | 状态机与看板列定义 |
-| `blank / blankPosition / normalize` | 数据结构与兼容性兜底 |
-| `aggStatus / aggAppliedDate / effStatus / syncCompanyFromPositions` | 公司 ↔ 岗位聚合 |
-| `setStatus / compactHistory` | 状态流转与历史去噪 |
-| `parsePositions` | 招聘页文本 → 岗位数组 |
-| `renderBoard / kcardCo / kcardPos / kcardGroup / renderList` | 看板与列表渲染 |
-| `detectServer / diffSince / flushSync / putRecord / deleteRecord` | 同步层 |
-| `snapshot / listBackups / restoreBackup / undo` | 备份与撤销 |
-| `window.__app` | 测试钩子（暴露内部函数供 Node 测试断言） |
+| `PIPELINE / TERMINAL / BOARD / BADGE` | state machine and lane definitions |
+| `blank / blankPosition / normalize` | data shape and backwards-compatible defaults |
+| `aggStatus / aggAppliedDate / effStatus / syncCompanyFromPositions` | company ↔ position aggregation |
+| `setStatus / compactHistory` | stage transitions and history denoising |
+| `parsePositions` | career-page text → position array |
+| `renderBoard / kcardCo / kcardPos / kcardGroup / renderList` | board and list rendering |
+| `EN / EN_TPL / EN_RULES / T / TT / localize / applyLang` | i18n layer |
+| `detectServer / diffSince / flushSync / putRecord / deleteRecord` | sync layer |
+| `snapshot / listBackups / restoreBackup / undo` | backups and undo |
+| `window.__app` | test hooks (internal functions exposed for Node assertions) |
 
-## 测试策略
+## Testing strategy
 
-`tests/dashboard.test.js` 用最小 DOM 桩（`document` / `localStorage` / `window`）直接执行 `dashboard.html` 里的脚本，通过 `window.__app` 断言内部行为，**不需要浏览器**。
+`tests/dashboard.test.js` executes the page script against minimal DOM stubs (`document`, `localStorage`, `window`) and asserts internal behaviour through `window.__app` — **no browser required**.
 
-设计原则：
+Principles:
 
-- 断言**与数据量无关**（不写死「50 家」），示例数据也能跑
-- 覆盖：渲染、状态流转、历史去噪、聚合、解析、筛选、增删、撤销、备份、同步降级
-- 额外守护：看板内不得出现真实公司名（开源安全）
+- assertions are **data-size independent** (never hard-code "50 companies"), so the 12-record sample data passes
+- coverage: rendering, stage transitions, history denoising, aggregation, parsing, filtering, CRUD, undo, backups, sync fallback, i18n
+- extra guards: the dashboard must not contain real company names; `data/ledger.json` must not be tracked
 
-## 目录职责
+`tests/smoke_test.py` starts a real server on a free port with a temporary ledger and exercises the API end to end. `tests/safety_check.py` enforces the privacy rules. Both are cross-platform and dependency-free.
+
+## Directory responsibilities
 
 ```
-dashboard.html   前端全部逻辑（含兜底数据，由 tools/build-embed.py 注入）
-server.py        本地服务（HTTP + 按条写入 + 备份）
-tools/           独立脚本：内嵌构建 / 链接检测 / 时间线生成
-tests/           回归测试
-docs/            截图与本文档
-data/            台账与备份（个人数据不入库）
+dashboard.html   all frontend logic (fallback data injected by tools/build-embed.py)
+server.py        local server (HTTP + per-record writes + backups)
+tools/           standalone scripts: embed / link check / timeline / screenshots
+tests/           regression, smoke and safety checks
+docs/            screenshots and these documents
+data/            ledger and backups (personal data never committed)
 ```

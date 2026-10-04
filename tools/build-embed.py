@@ -36,9 +36,9 @@ def main():
 
     data_path = args.data if os.path.isabs(args.data) else os.path.join(HERE, args.data)
     if not os.path.exists(DASH):
-        sys.exit('找不到 dashboard.html')
+        sys.exit('dashboard.html not found')
     if not os.path.exists(data_path):
-        sys.exit('找不到数据文件：%s' % data_path)
+        sys.exit('Data file not found: %s' % data_path)
 
     html = io.open(DASH, encoding='utf-8').read()
     data = io.open(data_path, encoding='utf-8').read().strip()
@@ -46,11 +46,11 @@ def main():
     i = html.find(START_MARK)
     j = html.find(END_MARK)
     if i < 0 or j < 0 or j < i:
-        sys.exit('dashboard.html 里找不到 DEFAULT_DATA 注入点')
+        sys.exit('DEFAULT_DATA injection point not found in dashboard.html')
 
     new_html = html[:i] + START_MARK + data + ';\n' + html[j:]
     io.open(DASH, 'w', encoding='utf-8').write(new_html)
-    print('已内嵌 %s → dashboard.html（%d 字符）' % (os.path.relpath(data_path, HERE), len(new_html)))
+    print('Embedded %s → dashboard.html (%d chars)' % (os.path.relpath(data_path, HERE), len(new_html)))
 
 
 if __name__ == '__main__':

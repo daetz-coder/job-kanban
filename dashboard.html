@@ -22,6 +22,7 @@
   .brand h1{font-size:19px;font-weight:700}
   .brand .sub{font-size:12px;color:var(--muted);margin-top:2px}
   .side-sec{display:flex;flex-direction:column;gap:8px}
+  .langbtn{margin-top:8px;font-size:12px;padding:5px 10px;align-self:flex-start}
   .side-h{font-size:11.5px;color:var(--muted);font-weight:700;letter-spacing:.4px}
   .side-sec input[type=search],.side-sec select{width:100%;padding:7px 10px;border:1px solid var(--line);
            border-radius:8px;font-size:13px;background:#fff;color:var(--ink)}
@@ -179,6 +180,7 @@
     <div class="brand">
       <h1>投递看板</h1>
       <div class="sub">2027 届校招 · AI Agent · 杭州</div>
+      <button class="btn langbtn" id="langBtn" title="切换界面语言 / Switch UI language">中文</button>
     </div>
 
     <div class="funnel" id="funnel"></div>
@@ -266,7 +268,7 @@ const DEFAULT_DATA = {
   "meta": {
     "title": "求职投递看板 · 示例数据",
     "schema": 3,
-    "说明": "这是示例数据，仅用于演示界面。真实台账由 server.py 写入 data/ledger.json（已在 .gitignore 中忽略）。",
+    "说明": "Sample data for the demo only. The real ledger is written to data/ledger.json (gitignored).",
     "状态流转": "未投递 → 已投递 → 综合素质评测 → 笔试 → 一面 → 二面 → 三面 → HR面 → offer；任意阶段可终止为 已拒 / 放弃",
     "状态可选值": [
       "未投递",
@@ -300,21 +302,21 @@ const DEFAULT_DATA = {
   "applications": [
     {
       "id": "sample-001",
-      "企业": "示例科技",
+      "企业": "Sample Tech",
       "梯队": "第一梯队-互联网大厂",
-      "岗位": "AI 应用开发工程师",
-      "工作地点": "杭州 / 北京",
+      "岗位": "AI Application Engineer",
+      "工作地点": "Hangzhou / Beijing",
       "投递链接": "https://example.com/campus",
       "面试轮次": "3 轮",
       "投递状态": "已投递",
       "投递日期": "2026-09-20",
-      "简历版本": "v2 Agent强化版",
+      "简历版本": "v2 Agent-focused",
       "渠道": "官网",
       "内推": "",
       "优先级": 5,
-      "下一步": "等待笔试通知",
+      "下一步": "Waiting for the written test invite",
       "下一步截止": "",
-      "备注": "示例记录：展示『已投递』状态",
+      "备注": "Demo:『已投递』状态",
       "岗位列表": [],
       "面试记录": [],
       "状态历史": [
@@ -330,21 +332,21 @@ const DEFAULT_DATA = {
     },
     {
       "id": "sample-002",
-      "企业": "演示网络",
+      "企业": "Demo Networks",
       "梯队": "第一梯队-互联网大厂",
-      "岗位": "大模型算法工程师",
-      "工作地点": "上海",
+      "岗位": "LLM Algorithm Engineer",
+      "工作地点": "Shanghai",
       "投递链接": "https://example.com/jobs",
       "面试轮次": "3-4 轮",
       "投递状态": "综合素质评测",
       "投递日期": "2026-09-15",
-      "简历版本": "v2 Agent强化版",
+      "简历版本": "v2 Agent-focused",
       "渠道": "内推",
-      "内推": "张三",
+      "内推": "Alex Zhang",
       "优先级": 4,
-      "下一步": "9/30 前完成在线测评",
+      "下一步": "Finish the online assessment by Sep 30",
       "下一步截止": "2026-09-30",
-      "备注": "示例记录：展示『综合素质评测』与逾期标红",
+      "备注": "Demo:『综合素质评测』与逾期标红",
       "岗位列表": [],
       "面试记录": [],
       "状态历史": [
@@ -366,21 +368,21 @@ const DEFAULT_DATA = {
     },
     {
       "id": "sample-003",
-      "企业": "样例智能",
+      "企业": "Specimen AI",
       "梯队": "第二梯队-AI/科技独角兽",
-      "岗位": "Agent 平台开发工程师",
-      "工作地点": "杭州",
+      "岗位": "Agent Platform Engineer",
+      "工作地点": "Hangzhou",
       "投递链接": "https://example.com/careers",
       "面试轮次": "3 轮",
       "投递状态": "笔试",
       "投递日期": "2026-09-10",
-      "简历版本": "v1 通用版",
+      "简历版本": "v1 general",
       "渠道": "牛客",
       "内推": "",
       "优先级": 3,
-      "下一步": "复习八股 + 刷题",
+      "下一步": "Review fundamentals and practice",
       "下一步截止": "",
-      "备注": "示例记录：展示『笔试』状态",
+      "备注": "Demo:『笔试』状态",
       "岗位列表": [],
       "面试记录": [],
       "状态历史": [
@@ -402,32 +404,32 @@ const DEFAULT_DATA = {
     },
     {
       "id": "sample-004",
-      "企业": "虚构云",
+      "企业": "Fictional Cloud",
       "梯队": "第二梯队-AI/科技独角兽",
-      "岗位": "RAG 工程师",
-      "工作地点": "深圳 / 杭州",
+      "岗位": "RAG Engineer",
+      "工作地点": "Shenzhen / Hangzhou",
       "投递链接": "https://example.com/join",
       "面试轮次": "3 轮",
       "投递状态": "一面",
       "投递日期": "2026-08-28",
-      "简历版本": "v2 Agent强化版",
+      "简历版本": "v2 Agent-focused",
       "渠道": "官网",
       "内推": "",
       "优先级": 5,
-      "下一步": "准备项目深挖问题",
+      "下一步": "Prepare for deep-dive project questions",
       "下一步截止": "",
-      "备注": "示例记录：展示『面试中』与面试记录",
+      "备注": "Demo:『面试中』与面试记录",
       "岗位列表": [
         {
-          "岗位": "RAG 检索工程师",
+          "岗位": "RAG Retrieval Engineer",
           "类型": "技术类",
-          "城市": "杭州",
-          "在招业务": "示例事业群 / 示例实验室",
+          "城市": "Hangzhou",
+          "在招业务": "Sample BU / Sample Lab",
           "更新日期": "2026-09-03",
           "投递状态": "一面",
           "投递日期": "2026-08-28",
-          "简历版本": "v2 Agent强化版",
-          "备注": "主投岗位",
+          "简历版本": "v2 Agent-focused",
+          "备注": "Primary role",
           "状态历史": [
             {
               "日期": "2026-08-28",
@@ -444,15 +446,15 @@ const DEFAULT_DATA = {
           ]
         },
         {
-          "岗位": "知识库平台工程师",
+          "岗位": "Knowledge Base Engineer",
           "类型": "技术类",
-          "城市": "深圳",
-          "在招业务": "示例事业群",
+          "城市": "Shenzhen",
+          "在招业务": "Sample BU",
           "更新日期": "2026-08-24",
           "投递状态": "已投递",
           "投递日期": "2026-08-30",
-          "简历版本": "v2 Agent强化版",
-          "备注": "备选岗位",
+          "简历版本": "v2 Agent-focused",
+          "备注": "Backup role",
           "状态历史": [
             {
               "日期": "2026-08-30",
@@ -467,8 +469,8 @@ const DEFAULT_DATA = {
         {
           "日期": "2026-09-20",
           "轮次": "一面",
-          "结果": "待通知",
-          "备注": "问 RAG 混合检索与重排取舍"
+          "结果": "Pending",
+          "备注": "Asked about hybrid retrieval vs. reranking trade-offs"
         }
       ],
       "状态历史": [
@@ -490,33 +492,33 @@ const DEFAULT_DATA = {
     },
     {
       "id": "sample-005",
-      "企业": "测试数据集团",
+      "企业": "Testdata Group",
       "梯队": "第三梯队-传统大厂/制造业",
-      "岗位": "智能体应用工程师",
-      "工作地点": "杭州",
+      "岗位": "Agent Application Engineer",
+      "工作地点": "Hangzhou",
       "投递链接": "https://example.com/hr",
       "面试轮次": "2-3 轮",
       "投递状态": "offer",
       "投递日期": "2026-08-05",
-      "简历版本": "v1 通用版",
+      "简历版本": "v1 general",
       "渠道": "BOSS直聘",
       "内推": "",
       "优先级": 4,
-      "下一步": "确认 offer 细节",
+      "下一步": "Confirm offer details",
       "下一步截止": "",
-      "备注": "示例记录：展示『Offer』状态",
+      "备注": "Demo:『Offer』状态",
       "岗位列表": [],
       "面试记录": [
         {
           "日期": "2026-08-20",
           "轮次": "一面",
-          "结果": "通过",
+          "结果": "Passed",
           "备注": ""
         },
         {
           "日期": "2026-08-27",
           "轮次": "二面",
-          "结果": "通过",
+          "结果": "Passed",
           "备注": ""
         }
       ],
@@ -539,10 +541,10 @@ const DEFAULT_DATA = {
     },
     {
       "id": "sample-006",
-      "企业": "模板机器人",
+      "企业": "Template Robotics",
       "梯队": "第四梯队-AI创业公司",
-      "岗位": "具身智能算法工程师",
-      "工作地点": "杭州 / 北京",
+      "岗位": "Embodied AI Engineer",
+      "工作地点": "Hangzhou / Beijing",
       "投递链接": "",
       "面试轮次": "3 轮",
       "投递状态": "未投递",
@@ -551,9 +553,9 @@ const DEFAULT_DATA = {
       "渠道": "官网",
       "内推": "",
       "优先级": 2,
-      "下一步": "看官网岗位是否开放",
+      "下一步": "Check whether the role is open",
       "下一步截止": "",
-      "备注": "示例记录：展示『未投递』（待投递清单）",
+      "备注": "Demo:『未投递』（待投递清单）",
       "岗位列表": [],
       "面试记录": [],
       "状态历史": [],
@@ -562,21 +564,21 @@ const DEFAULT_DATA = {
     },
     {
       "id": "sample-007",
-      "企业": "样本数据",
+      "企业": "Sample Data Inc",
       "梯队": "第二梯队-AI/科技独角兽",
-      "岗位": "多模态算法工程师",
-      "工作地点": "北京",
+      "岗位": "Multimodal Algorithm Engineer",
+      "工作地点": "Beijing",
       "投递链接": "https://example.com/campus",
       "面试轮次": "3 轮",
       "投递状态": "已投递",
       "投递日期": "2026-09-22",
-      "简历版本": "v2 Agent强化版",
+      "简历版本": "v2 Agent-focused",
       "渠道": "官网",
       "内推": "",
       "优先级": 4,
-      "下一步": "等待简历筛选",
+      "下一步": "Waiting for résumé screening",
       "下一步截止": "",
-      "备注": "示例：已投递",
+      "备注": "Demo: applied",
       "岗位列表": [],
       "面试记录": [],
       "状态历史": [
@@ -592,21 +594,21 @@ const DEFAULT_DATA = {
     },
     {
       "id": "sample-008",
-      "企业": "演示信息",
+      "企业": "Demo Info",
       "梯队": "第一梯队-互联网大厂",
-      "岗位": "搜索算法工程师",
-      "工作地点": "北京 / 上海",
+      "岗位": "Search Algorithm Engineer",
+      "工作地点": "Beijing / Shanghai",
       "投递链接": "https://example.com/campus",
       "面试轮次": "3 轮",
       "投递状态": "已投递",
       "投递日期": "2026-09-18",
-      "简历版本": "v2 Agent强化版",
+      "简历版本": "v2 Agent-focused",
       "渠道": "内推",
       "内推": "",
       "优先级": 5,
-      "下一步": "跟进内推进度",
+      "下一步": "Follow up on the referral",
       "下一步截止": "",
-      "备注": "示例：内推渠道",
+      "备注": "Demo: referral",
       "岗位列表": [],
       "面试记录": [],
       "状态历史": [
@@ -622,21 +624,21 @@ const DEFAULT_DATA = {
     },
     {
       "id": "sample-009",
-      "企业": "样例网络",
+      "企业": "Specimen Web",
       "梯队": "第三梯队-传统大厂/制造业",
-      "岗位": "AI 平台开发工程师",
-      "工作地点": "杭州",
+      "岗位": "AI Platform Engineer",
+      "工作地点": "Hangzhou",
       "投递链接": "https://example.com/campus",
       "面试轮次": "3 轮",
       "投递状态": "笔试",
       "投递日期": "2026-09-08",
-      "简历版本": "v1 通用版",
+      "简历版本": "v1 general",
       "渠道": "牛客",
       "内推": "",
       "优先级": 3,
-      "下一步": "刷题 + 复习八股",
+      "下一步": "Practice problems + review fundamentals",
       "下一步截止": "",
-      "备注": "示例：笔试阶段",
+      "备注": "Demo: written test",
       "岗位列表": [],
       "面试记录": [],
       "状态历史": [
@@ -652,21 +654,21 @@ const DEFAULT_DATA = {
     },
     {
       "id": "sample-010",
-      "企业": "虚构智能",
+      "企业": "Fictional Intelligence",
       "梯队": "第四梯队-AI创业公司",
-      "岗位": "大模型推理工程师",
-      "工作地点": "上海 / 杭州",
+      "岗位": "LLM Inference Engineer",
+      "工作地点": "Shanghai / Hangzhou",
       "投递链接": "https://example.com/campus",
       "面试轮次": "3 轮",
       "投递状态": "二面",
       "投递日期": "2026-08-18",
-      "简历版本": "v2 Agent强化版",
+      "简历版本": "v2 Agent-focused",
       "渠道": "BOSS直聘",
       "内推": "",
       "优先级": 4,
-      "下一步": "准备系统设计题",
+      "下一步": "Prepare for system design",
       "下一步截止": "",
-      "备注": "示例：二面阶段",
+      "备注": "Demo: interview 2",
       "岗位列表": [],
       "面试记录": [],
       "状态历史": [
@@ -682,21 +684,21 @@ const DEFAULT_DATA = {
     },
     {
       "id": "sample-011",
-      "企业": "测试云",
+      "企业": "Test Cloud",
       "梯队": "第二梯队-AI/科技独角兽",
-      "岗位": "Agent 评测工程师",
-      "工作地点": "深圳",
+      "岗位": "Agent Evaluation Engineer",
+      "工作地点": "Shenzhen",
       "投递链接": "https://example.com/campus",
       "面试轮次": "3 轮",
       "投递状态": "已拒",
       "投递日期": "2026-08-10",
-      "简历版本": "v1 通用版",
+      "简历版本": "v1 general",
       "渠道": "官网",
       "内推": "",
       "优先级": 2,
       "下一步": "",
       "下一步截止": "",
-      "备注": "示例：已结束（感谢信）",
+      "备注": "Demo: closed (rejection)",
       "岗位列表": [],
       "面试记录": [],
       "状态历史": [
@@ -712,32 +714,32 @@ const DEFAULT_DATA = {
     },
     {
       "id": "sample-012",
-      "企业": "模板科技",
+      "企业": "Template Tech",
       "梯队": "第一梯队-互联网大厂",
-      "岗位": "AI 产品经理",
-      "工作地点": "杭州 / 北京",
+      "岗位": "AI Product Manager",
+      "工作地点": "Hangzhou / Beijing",
       "投递链接": "https://example.com/campus",
       "面试轮次": "3 轮",
       "投递状态": "一面",
       "投递日期": "2026-09-01",
-      "简历版本": "v1 通用版",
+      "简历版本": "v1 general",
       "渠道": "官网",
       "内推": "",
       "优先级": 3,
-      "下一步": "准备产品sense问答",
+      "下一步": "Prepare for product-sense questions",
       "下一步截止": "",
-      "备注": "示例：一面 + 多岗位",
+      "备注": "Demo: interview 1 + multiple positions",
       "岗位列表": [
         {
-          "岗位": "AI 产品经理（Agent 方向）",
+          "岗位": "AI Product Manager (Agent)",
           "类型": "产品类",
-          "城市": "杭州",
-          "在招业务": "示例事业群 A",
+          "城市": "Hangzhou",
+          "在招业务": "Sample BU A",
           "更新日期": "2026-08-28",
           "投递状态": "一面",
           "投递日期": "2026-09-01",
-          "简历版本": "v2 Agent强化版",
-          "备注": "主投",
+          "简历版本": "v2 Agent-focused",
+          "备注": "Primary",
           "状态历史": [
             {
               "日期": "2026-09-01",
@@ -754,15 +756,15 @@ const DEFAULT_DATA = {
           ]
         },
         {
-          "岗位": "大模型应用产品经理",
+          "岗位": "LLM Application PM",
           "类型": "产品类",
-          "城市": "北京",
-          "在招业务": "示例事业群 B",
+          "城市": "Beijing",
+          "在招业务": "Sample BU B",
           "更新日期": "2026-08-20",
           "投递状态": "已投递",
           "投递日期": "2026-09-03",
-          "简历版本": "v2 Agent强化版",
-          "备注": "备选",
+          "简历版本": "v2 Agent-focused",
+          "备注": "Backup",
           "状态历史": [
             {
               "日期": "2026-09-03",
@@ -777,8 +779,8 @@ const DEFAULT_DATA = {
         {
           "日期": "2026-09-25",
           "轮次": "一面",
-          "结果": "待通知",
-          "备注": "问了 Agent 评测方案设计"
+          "结果": "Pending",
+          "备注": "Asked how to design an agent evaluation plan"
         }
       ],
       "状态历史": [
@@ -996,7 +998,7 @@ function load(){
       }catch(parseErr){
         // 本地数据损坏：先原样留档，绝不覆盖
         try{ localStorage.setItem(BACKUP_PREFIX + 'corrupt_' + Date.now(), s); }catch(e2){}
-        setTimeout(()=>alert('检测到本地数据损坏，已留档但未覆盖。请用「恢复上一版」或导入备份。'), 300);
+        setTimeout(()=>warn('检测到本地数据损坏，已留档但未覆盖。请用「恢复上一版」或导入备份。'), 300);
       }
     }
   }catch(e){}
@@ -1194,7 +1196,12 @@ async function restoreFileHandle(){
   if(h){ fileHandle = h; }              // 句柄保留；写入时校验权限
   renderFileStatus();
 }
+/* 外层包装：渲染完再统一翻译（内层有多个提前 return，不适合逐个包） */
 function renderFileStatus(){
+  _renderFileStatus();
+  _l10nWrap(document.getElementById('fileStat'));
+}
+function _renderFileStatus(){
   const el = document.getElementById('fileStat');
   if(!el) return;
   if(serverMode){
@@ -1458,15 +1465,15 @@ function kcardGroup(a, ci){
   const list = a['岗位列表']||[];
   const s = effStatus(a);
   const rows = list.map((p,pi)=>{
-    const opts = STATUS_ALL.map(x=>`<option ${p['投递状态']===x?'selected':''}>${x}</option>`).join('');
+    const opts = STATUS_ALL.map(x=>`<option value="${esc(x)}" ${p['投递状态']===x?'selected':''}>${x}</option>`).join('');
     const meta = [p['类型'], p['城市'], p['更新日期'] ? ('更新 ' + p['更新日期']) : ''].filter(Boolean);
     return `<div class="prow">
       <div class="prow-t"><b>${esc(p['岗位']||'—')}</b><span class="badge ${BADGE[p['投递状态']]}">${esc(p['投递状态'])}</span></div>
       ${meta.length?`<div class="prow-m">${meta.map(esc).join(' · ')}</div>`:''}
       <div class="prow-a">
         <select data-posstatus="1" data-ci="${ci}" data-pi="${pi}">${opts}</select>
-        <button class="mini" data-posadv="1" data-ci="${ci}" data-pi="${pi}">推进</button>
-        <button class="mini" data-posedit="1" data-ci="${ci}" data-pi="${pi}">编辑</button>
+        <button class="mini" data-posadv="1" data-ci="${ci}" data-pi="${pi}" title="推进状态 / Advance">→</button>
+        <button class="mini" data-posedit="1" data-ci="${ci}" data-pi="${pi}" title="编辑 / Edit">✎</button>
       </div>
     </div>`;
   }).join('');
@@ -1568,19 +1575,273 @@ function renderDatalists(){
   const c = document.getElementById('dlCompany');
   if(c) c.innerHTML = LIBRARY.map(x=>`<option>${esc(x['企业'])}</option>`).join('');
 }
+
+/* ================= i18n：界面默认英文，可切换中文 =================
+   数据键与状态值仍为中文（schema 不变），这里只翻译「显示层」：
+   - 渲染后的容器 HTML 走 localize()（只翻文本节点与 placeholder/title，绝不碰 value 属性）
+   - textContent 走 T()
+   - 弹窗/提示走 ask()/warn()/toast()，支持 {x} 占位符
+*/
+const LANG_KEY = 'jobkanban_lang';
+let lang = 'en';
+try{ const _v = localStorage.getItem(LANG_KEY); if(_v === 'zh' || _v === 'en') lang = _v; }catch(e){}
+
+const EN = {
+  /* 状态值（数据里仍是中文，仅显示翻译） */
+  '未投递':'Not applied','已投递':'Applied','综合素质评测':'Aptitude test','笔试':'Written test',
+  '一面':'Interview 1','二面':'Interview 2','三面':'Interview 3','HR面':'HR interview',
+  'offer':'Offer','已拒':'Rejected','放弃':'Withdrawn',
+  /* 梯队 */
+  '第一梯队-互联网大厂':'Tier 1 · Big tech','第二梯队-AI/科技独角兽':'Tier 2 · AI unicorn',
+  '第三梯队-传统大厂/制造业':'Tier 3 · Traditional','第四梯队-AI创业公司':'Tier 4 · AI startup',
+  '第一梯队 · 互联网大厂':'Tier 1 · Big tech','第二梯队 · AI/科技独角兽':'Tier 2 · AI unicorn',
+  '第三梯队 · 传统大厂/制造业':'Tier 3 · Traditional','第四梯队 · AI创业公司':'Tier 4 · AI startup',
+  /* 字段标签（编辑器） */
+  '企业 *':'Company *','企业':'Company','梯队':'Tier','岗位概述':'Position summary','岗位':'Position',
+  '投递状态':'Status','投递日期':'Applied on','简历版本':'Résumé version','渠道':'Channel',
+  '内推 / 联系人':'Referral / contact','工作地点':'Location','优先级（1-5）':'Priority (1-5)',
+  '下一步':'Next step','下一步截止':'Next step due','投递链接':'Job link','在招岗位':'Open positions',
+  '备注':'Notes','面试记录（公司级）':'Interviews (company level)','类型':'Type','城市':'City',
+  '在招业务':'Business unit','更新日期':'Updated','岗位名':'Position name','日期':'Date',
+  '轮次':'Round','结果':'Result','从':'From','到':'To','状态':'Status','变更':'Change',
+  '状态历史':'Status history','岗位列表':'Positions','链接状态':'Link status','链接检测日期':'Link checked',
+  '岗位 / 梯队':'Position / tier','优先级':'Priority','内推':'Referral','停滞天数':'Stale days',
+  /* 品牌与导航 */
+  '投递看板':'Job Kanban','投递看板 · 2027 届校招 AI Agent':'Job Kanban · Campus recruiting',
+  '2027 届校招 · AI Agent · 杭州':'2027 Campus · AI Agent · Hangzhou',
+  '看板':'Board','列表':'List','按公司':'By company','按岗位':'By position',
+  '按公司看：一家公司一张卡；按岗位看：每个在招岗位一张卡':'By company: one card per company · By position: one card per open position',
+  /* 统计 */
+  '公司':'Companies','已投递':'Applied','进测评':'Aptitude+','进笔试':'Written+','进面试':'Interview+',
+  'Offer':'Offer','停滞':'Stale','需跟进':'follow up','投递率':'applied','测评率':'aptitude',
+  '笔试率':'written','面试率':'interview','转化':'conversion',
+  /* 筛选 */
+  '筛选':'Filters','全部梯队':'All tiers','排序：梯队 + 投递时间':'Sort: tier + applied date',
+  '排序：投递日期':'Sort: applied date','排序：优先级':'Sort: priority','排序：状态进度':'Sort: stage',
+  '排序：停滞最久':'Sort: stalest','只看链接异常':'Only link issues',
+  '只看链接有异常（真问题 / 待确认）的企业':'Only companies with link problems',
+  '搜索企业 / 岗位 / 城市 / 渠道…':'Search company / position / city / channel…',
+  /* 操作 */
+  '操作':'Actions','＋ 新增企业':'+ New company','新增企业':'New company','导入':'Import','导出':'Export',
+  '撤销':'Undo','重置':'Reset','绑定本地文件 · 自动保存':'Bind local file · autosave',
+  '从 JSON 文件导入（会先自动备份，可用「撤销」回退）':'Import from a JSON file (auto-backup first, undoable)',
+  '导出当前台账为 投递台账.json':'Export the ledger as ledger.json',
+  '撤销上一步操作':'Undo the last action',
+  '重置为初始 50 家（会先自动备份，可撤销）':'Reset to the initial 50 companies (auto-backup first, undoable)',
+  '选择仓库里的 投递台账.json；之后每次改动都会自动写入该文件':'Pick your ledger.json; every change is written to it automatically',
+  /* 看板与卡片 */
+  '面试中':'Interviewing','已结束':'Closed','投递 ↗':'Apply ↗','打开 ↗':'Open ↗','编辑':'Edit',
+  '推进':'Advance','推进状态 →':'Advance →','删除':'Delete','删除岗位':'Remove position','保存':'Save',
+  '取消':'Cancel','整列都是投放区':'Drop anywhere in this column','没有匹配的记录':'No matching records',
+  '暂无状态变更记录（推进状态后自动记录）':'No status changes yet (recorded automatically)',
+  '逾期':'Overdue','待办逾期':'Overdue','可访问':'OK','无链接':'No link','未检测':'Not checked',
+  '投递入口':'Apply link','收起详情':'Collapse','展开详情':'Expand',
+  '＋ 加一个岗位':'+ Add position','+ 加一个岗位':'+ Add position','+ 加一条':'+ Add row',
+  '批量粘贴岗位':'Bulk paste positions','解析并添加':'Parse & add',
+  '支持多岗位连续粘贴，解析后可手工修正':'Paste several positions in a row; fix them after parsing',
+  '输入后自动补齐':'Auto-filled as you type',
+  '输入企业名会自动补齐岗位/地点/链接；日期与渠道已填默认值，可直接保存':'Typing a company auto-fills position, location and link; date and channel are prefilled',
+  '可留空，保存时会用岗位列表自动生成':'Optional — generated from the position list on save',
+  '如：完成笔试':'e.g. finish the written test','如：AI应用算法工程师':'e.g. AI Application Engineer',
+  '官网 / 牛客 / BOSS / 内推':'Official site / Nowcoder / BOSS / referral',
+  'v1 通用版 / v2 Agent强化版':'v1 general / v2 Agent-focused',
+  '技术类':'Engineering','产品类':'Product','算法类':'Algorithm','设计类':'Design','运营类':'Operations',
+  '官网':'Official site','牛客':'Nowcoder','BOSS直聘':'BOSS Zhipin','猎聘':'Liepin','实习僧':'Shixiseng','邮箱':'Email',
+  '手动修改':'Manual edit','看板拖拽':'Board drag','弹窗推进':'Advanced in dialog','列表推进':'Advanced in list',
+  '分组卡推进':'Advanced in group card','分组卡修改':'Edited in group card',
+  '示例事业群 / 示例实验室 / …':'Sample BU / Sample Lab / …',
+  '（一家公司可挂多个岗位，各自独立跟踪进度）':'(multiple positions per company, tracked independently)',
+  '（保存后生效）':'(applies after save)','未知':'unknown','天':'days',
+  /* 同步状态 */
+  '未绑定文件 · 数据仅在浏览器本地':'File not bound · data lives in the browser only',
+  '当前浏览器不支持自动写文件，请用 Chrome / Edge 打开（数据仍存在浏览器本地）':'This browser cannot write files — use Chrome or Edge (data stays in the browser)',
+  '已绑定，但首次写入失败':'Bound, but the first write failed',
+  '每次改动都会自动保存（本地服务/绑定文件时直接写入 投递台账.json），并留快照防丢。':'Every change is saved automatically (written straight to ledger.json in server mode), with snapshots for safety.',
+  '本地数据比文件新，正在写回文件…':'Local data is newer — writing it back to the file…',
+  '每日自动备份':'daily autosave','导入前':'before import','重置前':'before reset',
+  '没有可撤销的操作':'Nothing to undo','撤销失败':'Undo failed',
+  '企业名称不能为空':'Company name is required',
+  '没解析出岗位，请检查粘贴内容':'No positions parsed — check the pasted text',
+  '检测到本地数据损坏，已留档但未覆盖。请用「恢复上一版」或导入备份。':'Local data looks corrupted; it was archived, not overwritten. Import a backup to recover.',
+  '格式不对：需要含 applications 数组的 投递台账.json':'Wrong format — expected a ledger.json with an applications array',
+  '解析失败：':'Parse failed: ',
+};
+
+/* 模板（含 {x} 占位符） */
+const EN_TPL = {
+  '共 {n} 家':'{n} companies',
+  '停滞 {n} 天':'Stale {n} days',
+  '{n} 个岗位':'{n} positions',
+  '· {n} 个岗位':'· {n} positions',
+  '拖到这里 = 设为「{s}」':'Drop to set "{s}"',
+  '停滞 ≥{n}天':'Stale ≥{n}d',
+  '已撤销上一步（{n} 条）':'Undone ({n} records)',
+  '确定删除「{s}」？可撤销。':'Delete "{s}"? You can undo this.',
+  '已删除 {s}':'Deleted {s}',
+  '已是终态（{s}）':'Already terminal ({s})',
+  '已解析并添加 {n} 个岗位':'Parsed and added {n} positions',
+  '已导入 {n} 条（可用「撤销」回退）':'Imported {n} records (undoable)',
+  '已重置（可用「撤销」回退）':'Reset (undoable)',
+  '导入会用文件内容替换当前台账（{a} 条 → {b} 条）。\\n当前状态会自动备份，可用「撤销」回退。继续？':'Import replaces the current ledger ({a} → {b} records).\\nThe current state is backed up first and can be undone. Continue?',
+  '重置为初始 50 家数据？当前数据会自动备份，可用「撤销」回退。':'Reset to the initial 50 companies? The current data is backed up first and can be undone.',
+  '已连接本地服务：改动会自动写入 投递台账.json':'Connected to the local server — changes are written to ledger.json',
+  '已自动保存到 投递台账.json（本地服务·按条同步）':'Autosaved to ledger.json (local server · per-record sync)',
+  '正在写入 投递台账.json …':'Writing ledger.json …',
+  '已自动保存到 {f}':'Autosaved to {f}',
+  '正在写入 {f} …':'Writing {f} …',
+  '写入失败：{e}':'Write failed: {e}',
+  '写入失败，请重新绑定（{e}）':'Write failed — bind the file again ({e})',
+  '已绑定 {f}（改动会自动写入）':'Bound to {f} (changes are written automatically)',
+  '已绑定并写入 {f}，之后自动保存':'Bound and written to {f} — autosave is on',
+  '当前为 {p} 直开，浏览器不允许写文件':'Opened via {p}; browsers block file writes',
+  '双击「启动看板.bat」用本地服务打开即可自动保存':'Launch start.bat to open it through the local server and enable autosave',
+  '已自动保存到 {f} {t}':'Autosaved to {f} {t}',
+  '{co} → {s}':'{co} → {s}',
+  '{co} · {pos} → {s}':'{co} · {pos} → {s}',
+  '{co}：历史 {a} → {b} 条':'{co}: history {a} → {b}',
+  '已整理 {n} 家：历史 {a} → {b} 条':'Compacted {n} companies: history {a} → {b}',
+  '（检测于 {d}）':'(checked {d})',
+  '真问题·{s}':'Problem · {s}',
+  '待确认·{s}':'Unverified · {s}',
+  '投 {d}':'Applied {d}',
+  '更新 {d}':'Updated {d}',
+  '历史 {a} → {b} 条':'History {a} → {b}',
+};
+
+/* 动态文案：数字/名称会变，用正则兜底 */
+const EN_RULES = [
+  [/^(.+) · (.+) · 更新 (.+)$/, function(m, a, b, c){ return T(a) + ' · ' + b + ' · Updated ' + c; }],
+  [/^(.+) · 更新 (.+)$/,        function(m, a, b){ return T(a) + ' · Updated ' + b; }],
+  [/^(\d+) 天$/,              function(m, n){ return n + ' days'; }],
+  [/^停滞 (.+)$/,              function(m, v){ return 'Stale ' + T(v); }],
+  [/^投递率 (.+)$/,            function(m, v){ return 'applied ' + v; }],
+  [/^测评率 (.+)$/,            function(m, v){ return 'aptitude ' + v; }],
+  [/^笔试率 (.+)$/,            function(m, v){ return 'written ' + v; }],
+  [/^面试率 (.+)$/,            function(m, v){ return 'interview ' + v; }],
+  [/^转化 (.+)$/,              function(m, v){ return 'conversion ' + v; }],
+  [/^在招岗位 (\d+)$/,          function(m, n){ return n + ' open positions'; }],
+  [/^已自动保存到 (.+)（本地服务·按条同步）\s*(.*)$/, function(m, f, tm){ return 'Autosaved to ' + f + ' (local server · per-record sync) ' + tm; }],
+  [/^已自动保存到 (.+?)\s+(\d{2}:\d{2}:\d{2})$/, function(m, f, tm){ return 'Autosaved to ' + f + ' ' + tm; }],
+  [/^共 (\d+) 家$/,            function(m, n){ return n + ' companies'; }],
+  [/^停滞 (\d+) 天$/,          function(m, n){ return 'Stale ' + n + ' days'; }],
+  [/^停滞 ≥(\d+)天$/,          function(m, n){ return 'Stale ≥' + n + 'd'; }],
+  [/^(\d+) 个岗位$/,           function(m, n){ return n + ' positions'; }],
+  [/^· (\d+) 个岗位$/,         function(m, n){ return '· ' + n + ' positions'; }],
+  [/^拖到这里 = 设为「(.+)」$/,  function(m, s){ return 'Drop to set "' + T(s) + '"'; }],
+  [/^投 (.+)$/,                function(m, d){ return 'Applied ' + d; }],
+  [/^更新 (.+)$/,              function(m, d){ return 'Updated ' + d; }],
+  [/^（检测于 (.+)）$/,         function(m, d){ return '(checked ' + d + ')'; }],
+  [/^历史 (\d+) → (\d+) 条$/,   function(m, a, b){ return 'History ' + a + ' → ' + b; }],
+  [/^已撤销上一步（(\d+) 条）$/, function(m, n){ return 'Undone (' + n + ' records)'; }],
+  [/^已导入 (\d+) 条（可用「撤销」回退）$/, function(m, n){ return 'Imported ' + n + ' records (undoable)'; }],
+  [/^已删除 (.+)$/,            function(m, s){ return 'Deleted ' + s; }],
+  [/^已是终态（(.+)）$/,        function(m, s){ return 'Already terminal (' + T(s) + ')'; }],
+  [/^确定删除「(.+)」？可撤销。$/, function(m, s){ return 'Delete "' + s + '"? You can undo this.'; }],
+  [/^已解析并添加 (\d+) 个岗位$/, function(m, n){ return 'Parsed and added ' + n + ' positions'; }],
+  [/^正在写入 (.+) …$/,         function(m, f){ return 'Writing ' + f + ' …'; }],
+  [/^写入失败：(.+)$/,          function(m, e){ return 'Write failed: ' + e; }],
+  [/^已绑定 (.+)（改动会自动写入）$/, function(m, f){ return 'Bound to ' + f + ' (changes are written automatically)'; }],
+  [/^已绑定并写入 (.+)，之后自动保存$/, function(m, f){ return 'Bound and written to ' + f + ' — autosave is on'; }],
+  [/^当前为 (.+) 直开，浏览器不允许写文件$/, function(m, p){ return 'Opened via ' + p + '; browsers block file writes'; }],
+  [/^已自动保存到 (.+)$/,       function(m, f){ return 'Autosaved to ' + f; }],
+  [/^写入失败，请重新绑定（(.+)）$/, function(m, e){ return 'Write failed — bind the file again (' + e + ')'; }],
+  [/^(.+) · (.+) → (.+)$/,     function(m, co, pos, s){ return co + ' · ' + pos + ' → ' + T(s); }],
+  [/^(.+) → (.+)$/,            function(m, co, s){ return co + ' → ' + T(s); }],
+];
+
+function fill(tpl, vars){
+  return tpl.replace(/\{(\w+)\}/g, (m, k)=> (vars && vars[k] !== undefined) ? String(vars[k]) : m);
+}
+/* 取文案：中文原文 → 英文（无匹配则原样返回） */
+function T(s){
+  if(lang !== 'en' || typeof s !== 'string') return s;
+  const k = s.trim();
+  let out = null;
+  if(Object.prototype.hasOwnProperty.call(EN, k)) out = s.replace(k, EN[k]);
+  if(out === null){
+    for(let i = 0; i < EN_RULES.length; i++){
+      const m = k.match(EN_RULES[i][0]);
+      if(m){ out = EN_RULES[i][1].apply(null, m); break; }
+    }
+  }
+  if(out === null) out = s;
+  return out.replace(/投递台账\.json/g, 'ledger.json');   // 文件名统一显示为 ledger.json
+}
+/* 带占位符的文案 */
+function TT(tpl, vars){
+  if(lang !== 'en' || typeof tpl !== 'string') return tpl;
+  let out = null;
+  if(Object.prototype.hasOwnProperty.call(EN_TPL, tpl)) out = fill(EN_TPL[tpl], vars);
+  else out = T(tpl);
+  return out.replace(/投递台账\.json/g, 'ledger.json');
+}
+/* 渲染结果翻译：只动文本节点与 placeholder/title，textarea 内容与 value 属性保持原样 */
+function localize(html){
+  if(lang !== 'en' || typeof html !== 'string') return html;
+  const guards = [];
+  let out = html.replace(/<textarea([^>]*)>([\s\S]*?)<\/textarea>/g, function(m, attrs, body){
+    guards.push(body);
+    return '<textarea' + attrs + '>\u0001' + (guards.length - 1) + '\u0001</textarea>';
+  });
+  out = out.replace(/>([^<>]+)</g, function(m, txt){ return '>' + T(txt) + '<'; });
+  out = out.replace(/(placeholder|title|aria-label)="([^"]*)"/g, function(m, a, v){ return a + '="' + T(v) + '"'; });
+  out = out.replace(/\u0001(\d+)\u0001/g, function(m, i){ return guards[+i]; });
+  return out;
+}
+/* 渲染后统一翻译：这些容器里的内容都是界面文案（数据键值不受影响） */
+const L10N_IDS = ['boardView','listView','funnel','tier','fileStat','dupNote','modalBody','histBox','flow','toastMsg'];
+/* 就地翻译一个容器的内容（幂等；供独立渲染函数复用） */
+function _l10nWrap(el){
+  if(lang !== 'en' || !el) return;
+  try{ el.innerHTML = localize(el.innerHTML); }catch(e){}
+}
+function applyLang(){
+  if(lang !== 'en') return;
+  L10N_IDS.forEach(function(id){
+    const el = document.getElementById(id);
+    if(el) el.innerHTML = localize(el.innerHTML);
+  });
+}
+/* 静态骨架（侧栏/工具栏/弹窗页脚）的文本节点：就地替换，保留事件监听 */
+function localizeStatic(){
+  if(lang !== 'en') return;
+  try{
+    if(typeof document.createTreeWalker !== 'function' || typeof NodeFilter === 'undefined') return;
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
+    const nodes = [];
+    while(walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(function(n){
+      if(n.parentNode && /^(SCRIPT|STYLE|TEXTAREA|TITLE)$/.test(n.parentNode.nodeName)) return;
+      const v = T(n.nodeValue);
+      if(v !== n.nodeValue) n.nodeValue = v;
+    });
+    document.querySelectorAll('[placeholder],[title]').forEach(function(el){
+      if(el.placeholder) el.placeholder = T(el.placeholder);
+      if(el.title) el.title = T(el.title);
+    });
+  }catch(e){}
+}
+function setLang(next){
+  try{ localStorage.setItem(LANG_KEY, next); }catch(e){}
+  try{ if(typeof location !== 'undefined' && location.reload) location.reload(); }catch(e){}
+}
+function ask(tpl, vars){ return confirm(TT(tpl, vars)); }
+function warn(tpl, vars){ alert(TT(tpl, vars)); }
+
 function render(){
   renderFunnel(); renderTier(); renderPills(); renderDatalists(); renderFileStatus();
   const list = filtered();
-  document.getElementById('count').textContent = `共 ${list.length} 家`;
+  document.getElementById('count').textContent = T('共 ' + list.length + ' 家');
   document.getElementById('boardView').style.display = view==='board'?'grid':'none';
   document.getElementById('listView').style.display = view==='list'?'block':'none';
   if(view==='board') renderBoard(); else renderList();
+  applyLang();                                   // 渲染后统一翻译显示层（数据键值不变）
 }
 
 /* ---------- 弹窗（增删改） ---------- */
 /* 岗位块（弹窗内一行一个岗位，可增删改） */
 function posBlock(p, i){
-  const opts = STATUS_ALL.map(s=>`<option ${p['投递状态']===s?'selected':''}>${s}</option>`).join('');
+  const opts = STATUS_ALL.map(s=>`<option value="${esc(s)}" ${p['投递状态']===s?'selected':''}>${s}</option>`).join('');
   return `<div class="pos" data-pos="1">
     <div class="grid" style="gap:8px">
       <div class="field wide"><label>岗位名</label><input data-pk="岗位" value="${esc(p['岗位'])}" placeholder="如：AI应用算法工程师"></div>
@@ -1607,19 +1868,19 @@ function openEditor(idx, pi){
   // 默认值：投递日期默认今天（未投递的旧记录不补）；渠道一律默认官网
   const defDate = a['投递日期'] || ((isNew || a['投递状态']!=='未投递') ? today() : '');
   const defChannel = a['渠道'] || '官网';
-  document.getElementById('modalTitle').textContent = isNew ? '新增企业' : a['企业'];
+  document.getElementById('modalTitle').textContent = isNew ? T('新增企业') : a['企业'];
   document.getElementById('modalSub').textContent = isNew
-    ? '输入企业名会自动补齐岗位/地点/链接；日期与渠道已填默认值，可直接保存'
+    ? T('输入企业名会自动补齐岗位/地点/链接；日期与渠道已填默认值，可直接保存')
     : (a['岗位']||'');
   document.getElementById('delBtn').style.display = isNew ? 'none' : '';
   document.getElementById('advBtn').style.display = isNew ? 'none' : '';
   document.getElementById('flow').innerHTML = flowHTML(a['投递状态'], isNew);
-  const opt = STATUS_ALL.map(s=>`<option ${a['投递状态']===s?'selected':''}>${s}</option>`).join('');
+  const opt = STATUS_ALL.map(s=>`<option value="${esc(s)}" ${a['投递状态']===s?'selected':''}>${s}</option>`).join('');
   const tiers = ['第一梯队-互联网大厂','第二梯队-AI/科技独角兽','第三梯队-传统大厂/制造业','第四梯队-AI创业公司'];
   const positions = a['岗位列表']||[];
   document.getElementById('modalBody').innerHTML = `
     <div class="field"><label>企业 *</label><input data-k="企业" list="dlCompany" value="${esc(a['企业'])}" placeholder="输入后自动补齐"></div>
-    <div class="field"><label>梯队</label><select data-k="梯队">${tiers.map(t=>`<option ${a['梯队']===t?'selected':''}>${t}</option>`).join('')}</select></div>
+    <div class="field"><label>梯队</label><select data-k="梯队">${tiers.map(t=>`<option value="${esc(t)}" ${a['梯队']===t?'selected':''}>${t}</option>`).join('')}</select></div>
     <div class="field wide"><label>岗位概述</label><input data-k="岗位" value="${esc(a['岗位'])}" placeholder="可留空，保存时会用岗位列表自动生成"></div>
     <div class="field"><label>投递状态</label><select data-k="投递状态">${opt}</select></div>
     <div class="field"><label>投递日期</label><input data-k="投递日期" type="date" value="${esc(defDate)}"></div>
@@ -1658,6 +1919,7 @@ function openEditor(idx, pi){
       <button class="btn" id="ivAdd" type="button">+ 加一条</button>
     </div>`;
   document.getElementById('histBox').innerHTML = histHTML(a);
+  applyLang();
   document.getElementById('modalBg').classList.add('show');
   if(focusPi >= 0){
     const el = document.querySelectorAll('#posList .pos')[focusPi];
@@ -1717,7 +1979,7 @@ function collectEditor(){
 function saveEditor(){
   const before = editing===-1 ? null : state.applications[editing];
   const a = collectEditor();
-  if(!a['企业']){ alert('企业名称不能为空'); return; }
+  if(!a['企业']){ warn('企业名称不能为空'); return; }
   // 有岗位列表时：公司级状态/日期由岗位聚合；岗位概述为空则自动生成
   if((a['岗位列表']||[]).length){
     if(!String(a['岗位']||'').trim()){
@@ -1743,7 +2005,7 @@ function saveEditor(){
 function deleteCurrent(){
   if(editing<0) return;
   const a = state.applications[editing];
-  if(!confirm(`确定删除「${a['企业']}」？可撤销。`)) return;
+  if(!ask(`确定删除「${a['企业']}」？可撤销。`)) return;
   const backup = JSON.parse(JSON.stringify(a));
   delApp(editing);
   document.getElementById('modalBg').classList.remove('show');
@@ -1755,7 +2017,7 @@ function deleteCurrent(){
 let toastTimer=null;
 function toast(msg, undo){
   const el = document.getElementById('toast');
-  document.getElementById('toastMsg').textContent = msg;
+  document.getElementById('toastMsg').textContent = TT(msg);
   const btn = document.getElementById('toastUndo');
   btn.style.display = undo ? '' : 'none';
   btn.onclick = ()=>{ if(undo) undo(); el.classList.remove('show'); };
@@ -1798,6 +2060,14 @@ function syncHash(){
   }catch(e){}
 }
 applyHash();
+localizeStatic();                                   // 侧栏/工具栏/弹窗页脚的静态文案
+try{ document.title = T(document.title); }catch(e){}
+(function initLangBtn(){
+  const lb = document.getElementById('langBtn');
+  if(!lb) return;
+  lb.textContent = (lang === 'en') ? '中文' : 'English';
+  lb.addEventListener('click', ()=> setLang(lang === 'en' ? 'zh' : 'en'));
+})();
 render();
 syncHash();
 
@@ -1999,9 +2269,10 @@ document.getElementById('exportBtn').addEventListener('click', exportJSON);
 /* 导入：用文件内容替换当前台账（先自动备份，可用「撤销」回退） */
 function doImport(text){
   let d;
-  try{ d = JSON.parse(text); }catch(e){ alert('解析失败：' + e.message); return; }
-  if(!d || !Array.isArray(d.applications)){ alert('格式不对：需要含 applications 数组的 投递台账.json'); return; }
-  if(!confirm('导入会用文件内容替换当前台账（' + state.applications.length + ' 条 → ' + d.applications.length + ' 条）。\n当前状态会自动备份，可用「撤销」回退。继续？')) return;
+  try{ d = JSON.parse(text); }catch(e){ warn('解析失败：' + e.message); return; }
+  if(!d || !Array.isArray(d.applications)){ warn('格式不对：需要含 applications 数组的 投递台账.json'); return; }
+  if(!ask('导入会用文件内容替换当前台账（{a} 条 → {b} 条）。\n当前状态会自动备份，可用「撤销」回退。继续？',
+          { a: state.applications.length, b: d.applications.length })) return;
   snapshot('导入前');
   state = d;
   state.applications = state.applications.map(normalize);
@@ -2020,7 +2291,7 @@ document.getElementById('importFile').addEventListener('change', e=>{
 document.getElementById('undoBtn').addEventListener('click', undo);
 
 document.getElementById('resetBtn').addEventListener('click', ()=>{
-  if(!confirm('重置为初始 50 家数据？当前数据会自动备份，可用「撤销」回退。')) return;
+  if(!ask('重置为初始 50 家数据？当前数据会自动备份，可用「撤销」回退。')) return;
   snapshot('重置前');
   localStorage.removeItem(STORAGE_KEY);
   state = load(); save(); toast('已重置（可用「撤销」回退）');
@@ -2055,6 +2326,7 @@ window.__app = { get state(){return state;}, get view(){return view;}, setView(v
   snapshot, listBackups, restoreBackup, doImport,
   fsSupported, bindFile, writeToFile, scheduleFileWrite, renderFileStatus,
   detectServer, pushToServer, flushSync, diffSince, putRecord, deleteRecord, postFull,
+  localize, T, TT, applyLang, get lang(){ return lang; },
   get serverMode(){ return serverMode; } };
 </script>
 </body>

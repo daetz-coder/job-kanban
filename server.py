@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""求职投递看板 · 本地服务
+"""Job Kanban · local server
 
 提供看板页面，并读写你的投递台账（JSON）。按条写入 + 写锁 + 原子替换，
 多个标签页同时改也不会互相覆盖。
@@ -58,7 +58,7 @@ def read_state():
 
 
 def write_state(obj, reason=''):
-    """加锁 + 备份 + 原子替换；返回写入后的记录数。"""
+    """Lock, back up and atomically replace; returns the record count written."""
     with WRITE_LOCK:
         try:
             if os.path.exists(STATE):
@@ -196,10 +196,10 @@ class Server(socketserver.ThreadingTCPServer):
 
 def main():
     global STATE, BACKUP_DIR, PORT
-    ap = argparse.ArgumentParser(description='求职投递看板 · 本地服务')
-    ap.add_argument('--data', default=os.path.join('data', 'ledger.json'), help='台账 JSON 路径（默认 data/ledger.json）')
-    ap.add_argument('--port', type=int, default=8765, help='端口（默认 8765）')
-    ap.add_argument('--no-browser', action='store_true', help='启动后不自动打开浏览器')
+    ap = argparse.ArgumentParser(description='Job Kanban · local server')
+    ap.add_argument('--data', default=os.path.join('data', 'ledger.json'), help='path to the ledger JSON (default: data/ledger.json)')
+    ap.add_argument('--port', type=int, default=8765, help='port (default: 8765)')
+    ap.add_argument('--no-browser', action='store_true', help='do not open the browser automatically')
     args = ap.parse_args()
 
     STATE = args.data if os.path.isabs(args.data) else os.path.join(HERE, args.data)
@@ -207,22 +207,22 @@ def main():
     PORT = args.port
 
     if not os.path.exists(DASH):
-        sys.exit('找不到 dashboard.html（请与本脚本放在同一目录）')
+        sys.exit('dashboard.html not found (keep it next to this script)')
     if not os.path.exists(STATE):
         os.makedirs(os.path.dirname(STATE) or '.', exist_ok=True)
         sample = os.path.join(HERE, 'data', 'sample-ledger.json')
         if os.path.exists(sample):
             io.open(STATE, 'w', encoding='utf-8').write(io.open(sample, encoding='utf-8').read())
-            print('未找到台账，已用示例数据初始化：%s' % STATE)
+            print('No ledger found — initialised from sample data: %s' % STATE)
         else:
             io.open(STATE, 'w', encoding='utf-8').write(json.dumps({'meta': {}, 'applications': []}, ensure_ascii=False, indent=2))
 
     with Server(('127.0.0.1', PORT), Handler) as httpd:
         url = 'http://127.0.0.1:%d/' % PORT
-        print('求职投递看板已启动：%s' % url)
-        print('数据文件：%s' % STATE)
-        print('改动会自动写入（按条写入 + 写锁 + 原子替换，写前备份到 %s）' % BACKUP_DIR)
-        print('Ctrl+C 停止。')
+        print('Job Kanban is running at %s' % url)
+        print('Ledger file: %s' % STATE)
+        print('Changes are written automatically (per-record, write lock, atomic replace; backups in %s)' % BACKUP_DIR)
+        print('Press Ctrl+C to stop.')
         if not args.no_browser:
             try:
                 import webbrowser
@@ -232,7 +232,7 @@ def main():
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
-            print('\n已停止')
+            print('\nStopped')
 
 
 if __name__ == '__main__':

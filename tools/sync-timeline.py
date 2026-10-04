@@ -25,6 +25,13 @@ except Exception:
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PIPELINE = ['未投递', '已投递', '综合素质评测', '笔试', '一面', '二面', '三面', 'HR面', 'offer']
 TERMINAL = ['已拒', '放弃']
+EN = {'未投递': 'Not applied', '已投递': 'Applied', '综合素质评测': 'Aptitude test', '笔试': 'Written test',
+      '一面': 'Interview 1', '二面': 'Interview 2', '三面': 'Interview 3', 'HR面': 'HR interview',
+      'offer': 'Offer', '已拒': 'Rejected', '放弃': 'Withdrawn'}
+
+
+def en(s):
+    return EN.get(s, s)
 
 
 def main():
@@ -49,38 +56,38 @@ def main():
         return max(alive, key=lambda p: rank(p.get('投递状态', '未投递'))).get('投递状态', '未投递')
 
     L = []
-    L.append('# 求职投递时间线\n')
-    L.append('> 由 `tools/sync-timeline.py` 从台账 JSON 生成，勿手改。\n')
+    L.append('# Job application timeline\n')
+    L.append('> Generated from the ledger JSON by `tools/sync-timeline.py` — do not edit by hand.\n')
 
     cnt = collections.Counter(eff(a) for a in apps)
-    L.append('## 状态速览\n')
-    L.append('| 状态 | 数量 |')
+    L.append('## Status overview\n')
+    L.append('| Status | Count |')
     L.append('|---|---|')
     for s in PIPELINE + TERMINAL:
         if cnt.get(s):
-            L.append('| %s | %d |' % (s, cnt[s]))
-    L.append('| **合计** | **%d** |\n' % len(apps))
+            L.append('| %s | %d |' % (en(s), cnt[s]))
+    L.append('| **Total** | **%d** |\n' % len(apps))
 
     active = [a for a in apps if a.get('投递日期') and eff(a) != '未投递']
-    L.append('## 投递时间线（按日期倒序）\n')
+    L.append('## Timeline (newest first)\n')
     if not active:
-        L.append('_（暂无投递记录）_\n')
+        L.append('_(no applications yet)_\n')
     else:
         for a in sorted(active, key=lambda x: x['投递日期'], reverse=True):
             L.append('- **%s** · %s（%s）· %s · 简历 %s · %s' % (
-                a['投递日期'], a.get('企业', ''), a.get('岗位', ''), eff(a),
+                a['投递日期'], a.get('企业', ''), a.get('岗位', ''), en(eff(a)),
                 a.get('简历版本') or '—', a.get('渠道') or '—'))
             for r in a.get('面试记录') or []:
                 L.append('    - %s｜%s｜%s｜%s' % (r.get('日期', ''), r.get('轮次', ''),
                                                  r.get('结果', ''), r.get('备注', '')))
 
-    L.append('\n## 待投递清单\n')
+    L.append('\n## To apply\n')
     for a in apps:
         if eff(a) == '未投递':
             L.append('- [ ] **%s**｜%s｜%s' % (a.get('企业', ''), a.get('岗位', ''), a.get('工作地点', '')))
 
     io.open(out, 'w', encoding='utf-8').write('\n'.join(L))
-    print('已生成 %s（%d 家，进行中 %d）' % (os.path.relpath(out, HERE), len(apps), len(active)))
+    print('Wrote %s (%d companies, %d in progress)' % (os.path.relpath(out, HERE), len(apps), len(active)))
 
 
 if __name__ == '__main__':

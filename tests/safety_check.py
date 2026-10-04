@@ -37,10 +37,10 @@ REAL_COMPANIES = [
 
 # 个人身份信息特征
 PII_PATTERNS = [
-    (r'1[3-9]\d{9}', '手机号'),
-    (r'[\w.+-]+@(qq|163|126|gmail|outlook|foxmail)\.com', '个人邮箱'),
-    (r'NAME', '姓名'),
-    (r'SCHOOL', '学校'),
+    (r'1[3-9]\d{9}', 'phone'),
+    (r'[\w.+-]+@(qq|163|126|gmail|outlook|foxmail)\.com', 'personal email'),
+    (r'NAME', 'name'),
+    (r'SCHOOL', 'school'),
 ]
 
 # 允许出现真实公司名的地方（黑名单守卫本身、示例数据的虚构声明）
@@ -87,15 +87,15 @@ def read_text(rel):
 
 def main():
     files = tracked_files()
-    print('检查 %d 个文件\n' % len(files))
+    print('Checking %d files\n' % len(files))
 
     # 1. 看板内不得含真实公司名
     dash = read_text('dashboard.html') or ''
     leaked = [c for c in REAL_COMPANIES if c in dash]
-    check('dashboard.html 内无真实公司名', not leaked, ','.join(leaked))
+    check('No real company names inside dashboard.html', not leaked, ','.join(leaked))
 
     # 2. 个人台账不得被跟踪
-    check('data/ledger.json 未被 git 跟踪', 'data/ledger.json' not in files)
+    check('data/ledger.json is not tracked by git', 'data/ledger.json' not in files)
 
     # 3. 被跟踪文本文件不得含个人身份信息
     pii_hits = []
@@ -108,23 +108,23 @@ def main():
         for pattern, label in PII_PATTERNS:
             if re.search(pattern, text):
                 pii_hits.append('%s(%s)' % (rel, label))
-    check('被跟踪文件内无个人身份信息', not pii_hits, ', '.join(pii_hits[:5]))
+    check('No personal identifiers in tracked files', not pii_hits, ', '.join(pii_hits[:5]))
 
     # 4. 示例数据必须是虚构公司
     sample = read_text('data/sample-ledger.json') or ''
     sample_real = [c for c in REAL_COMPANIES if c in sample]
-    check('示例数据内无真实公司名', not sample_real, ','.join(sample_real))
+    check('No real company names in the sample data', not sample_real, ','.join(sample_real))
 
     # 5. 备份与临时文件不得被跟踪
     junk = [f for f in files if f.startswith('data/.backup/') or f.endswith(('.tmp', '.pyc'))]
-    check('无备份/临时文件被跟踪', not junk, ', '.join(junk[:5]))
+    check('No backup/temp files tracked', not junk, ', '.join(junk[:5]))
 
-    print('\n通过 %d 项，失败 %d 项' % (len(ok), len(bad)))
+    print('\n%d passed, %d failed' % (len(ok), len(bad)))
     if bad:
         for b in bad:
             print('  [FAIL] ' + b)
         return 1
-    print('安全检查全部通过')
+    print('Safety check passed')
     return 0
 
 

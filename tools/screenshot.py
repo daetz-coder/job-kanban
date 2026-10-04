@@ -91,14 +91,14 @@ def wait_server(port, timeout=15):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--keep-server', action='store_true', help='截完不停止临时服务')
+    ap.add_argument('--keep-server', action='store_true', help='do not stop the temporary server afterwards')
     args = ap.parse_args()
 
     browser = find_browser()
     if not browser:
-        sys.exit('找不到 Chrome / Edge，请先安装或用 --help 查看支持的路径')
+        sys.exit('Chrome / Edge not found — install one or see the supported paths in the source')
     if not os.path.exists(SAMPLE):
-        sys.exit('找不到示例数据：%s' % SAMPLE)
+        sys.exit('Sample data not found: %s' % SAMPLE)
 
     os.makedirs(DOCS, exist_ok=True)
     tmpdir = tempfile.mkdtemp(prefix='jobtracker-shots-')
@@ -106,15 +106,15 @@ def main():
     io.open(data, 'w', encoding='utf-8').write(io.open(SAMPLE, encoding='utf-8').read())
     port = free_port()
 
-    print('浏览器：%s' % browser)
-    print('临时服务：http://127.0.0.1:%d/  （数据：示例数据）' % port)
+    print('Browser: %s' % browser)
+    print('Temporary server: http://127.0.0.1:%d/  (sample data)' % port)
     proc = subprocess.Popen(
         [sys.executable, os.path.join(HERE, 'server.py'),
          '--port', str(port), '--no-browser', '--data', data],
         cwd=HERE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     try:
         if not wait_server(port):
-            sys.exit('临时服务启动失败')
+            sys.exit('Failed to start the temporary server')
         for name, frag, w, h in SHOTS:
             out = os.path.join(DOCS, name)
             if os.path.exists(out):
@@ -141,7 +141,7 @@ def main():
         shutil.rmtree(tmpdir, ignore_errors=True)
         for junk in glob.glob(os.path.join(DOCS, '*.tmp')):
             os.remove(junk)
-    print('完成，截图在 %s' % os.path.relpath(DOCS, HERE))
+    print('Done — screenshots are in %s' % os.path.relpath(DOCS, HERE))
 
 
 if __name__ == '__main__':

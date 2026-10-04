@@ -1,41 +1,41 @@
-# 行为准则（Contributor Covenant Code of Conduct）
+# Contributor Covenant Code of Conduct
 
-## 我们的承诺
+## Our pledge
 
-为了营造开放、友好的环境，我们作为贡献者与维护者承诺：参与本项目的每个人都不受骚扰，无论年龄、体型、残障、 ethnicity、性别认同与表达、经验水平、国籍、外貌、种族、宗教或性取向。
+We as members, contributors and maintainers pledge to make participation in our community a harassment-free experience for everyone, regardless of age, body size, visible or invisible disability, ethnicity, sex characteristics, gender identity and expression, level of experience, education, socio-economic status, nationality, personal appearance, race, religion, or sexual identity and orientation.
 
-## 我们的标准
+## Our standards
 
-有助于营造积极环境的行为包括：
+Examples of behaviour that contributes to a positive environment:
 
-- 使用友好与包容的语言
-- 尊重不同的观点与经验
-- 优雅地接受建设性批评
-- 关注对社区最有利的事
-- 对其他社区成员保持同理心
+- Using welcoming and inclusive language
+- Being respectful of differing viewpoints and experiences
+- Gracefully accepting constructive criticism
+- Focusing on what is best for the community
+- Showing empathy towards other community members
 
-不可接受的行为包括：
+Examples of unacceptable behaviour:
 
-- 使用性化语言或图像，以及不受欢迎的性关注或示好
-- 挑衅、侮辱 / 贬损性评论，以及人身或政治攻击
-- 公开或私下的骚扰
-- 未经许可发布他人的私人信息（如真实姓名、住址、投递数据）
-- 其他在专业场合可被合理认定为不当的行为
+- Sexualised language or imagery, and unwelcome sexual attention or advances
+- Trolling, insulting or derogatory comments, and personal or political attacks
+- Public or private harassment
+- Publishing others' private information, such as a physical or email address, without explicit permission
+- Other conduct which could reasonably be considered inappropriate in a professional setting
 
-## 我们的责任
+## Our responsibilities
 
-维护者有责任澄清可接受行为的标准，并对任何不可接受的行为采取适当且公平的纠正措施。
+Maintainers are responsible for clarifying the standards of acceptable behaviour and are expected to take appropriate and fair corrective action in response to any instances of unacceptable behaviour.
 
-维护者有权删除、编辑或拒绝不符合本准则的评论、提交、代码、Issue 及其他贡献，并在适当时说明理由。
+Maintainers have the right and responsibility to remove, edit, or reject comments, commits, code, issues and other contributions that are not aligned with this Code of Conduct, and will communicate reasons for moderation decisions when appropriate.
 
-## 适用范围
+## Scope
 
-本准则适用于项目空间内，也适用于个人在公共空间代表本项目时的行为。
+This Code of Conduct applies within all community spaces, and also applies when an individual is officially representing the community in public spaces.
 
-## 执行
+## Enforcement
 
-如遇辱骂、骚扰或其他不可接受的行为，可通过 GitHub 私密渠道联系维护者。所有投诉都会被审查与调查，并给出必要且适当的回应。维护者有义务对事件报告者保密。
+Instances of abusive, harassing, or otherwise unacceptable behaviour may be reported to the maintainers via GitHub's private channels. All complaints will be reviewed and investigated promptly and fairly. Maintainers are obligated to respect the privacy and security of the reporter of any incident.
 
-## 归属
+## Attribution
 
-本行为准则改编自 [Contributor Covenant](https://www.contributor-covenant.org) 2.1 版，见 <https://www.contributor-covenant.org/version/2/1/code_of_conduct/>。
+This Code of Conduct is adapted from the [Contributor Covenant](https://www.contributor-covenant.org), version 2.1, available at <https://www.contributor-covenant.org/version/2/1/code_of_conduct/>.

@@ -44,9 +44,9 @@ const board = els['boardView'].innerHTML || '';
 t('看板渲染 7 列', (board.match(/class="col"/g) || []).length === 7, (board.match(/class="col"/g) || []).length + ' 列');
 t('看板渲染全部卡片', (board.match(/class="kcard/g) || []).length >= N, (board.match(/class="kcard/g) || []).length + '/' + N);
 t('含企业数据', board.includes(firstCo), firstCo);
-t('漏斗统计已渲染', (els['funnel'].innerHTML || '').includes('已投递'));
-t('计数与数据量一致', els['count'].textContent === '共 ' + N + ' 家', els['count'].textContent);
-t('梯队下拉已渲染', (els['tier'].innerHTML || '').includes('全部梯队'));
+t('漏斗统计已渲染（英文）', (els['funnel'].innerHTML || '').includes('Applied'));
+t('计数与数据量一致（英文界面）', els['count'].textContent === N + ' companies', els['count'].textContent);
+t('梯队下拉已渲染（英文）', (els['tier'].innerHTML || '').includes('All tiers'), (els['tier'].innerHTML||'').slice(0,40));
 t('状态筛选 pills 已移除', !html.includes('id="pills"'));
 t('默认展示全部', A.filtered().length === N, A.filtered().length + '');
 
@@ -223,7 +223,7 @@ t('分组卡内含 2 个岗位行', (gcHtml.match(/class="prow"/g) || []).length
 t('岗位行含状态下拉', gcHtml.includes('data-posstatus="1"'));
 t('岗位行含推进/编辑', gcHtml.includes('data-posadv="1"') && gcHtml.includes('data-posedit="1"'));
 t('分组卡自身不可拖拽', gcHtml.includes('draggable="false"'));
-t('分组卡显示岗位数', gcHtml.includes('2 个岗位'));
+t('分组卡显示岗位数（英文，经 localize）', A.localize(gcHtml).includes('2 positions'), A.localize(gcHtml).slice(0, 60));
 A.setUnit('company');
 A.save();
 
@@ -284,6 +284,21 @@ t('flushSync 存在', typeof A.flushSync === 'function');
 const realNames = ['阿里巴巴', '蚂蚁集团', '字节跳动', '腾讯', '百度', '美团', '京东', '网易', '华为', '海康威视'];
 const leaked = realNames.filter(n => html.includes(n));
 t('看板内无真实公司名', leaked.length === 0, leaked.join(','));
+
+
+// 18. i18n：默认英文界面，数据键值仍为中文
+t('界面默认英文（看板列名）', /Applied|Not applied|Interviewing|Closed/.test(els['boardView'].innerHTML || ''));
+t('看板文本节点不再出现中文状态', !/>\s*(未投递|已投递|面试中|已结束)\s*</.test(els['boardView'].innerHTML || ''));
+t('option 的 value 仍为中文（数据不变）', A.localize('<option value="未投递">未投递</option>').includes('value="未投递"'));
+t('数据键仍为中文（企业/投递状态）', A.state.applications.every(x => '企业' in x && '投递状态' in x));
+t('状态值仍为中文（未投递/已投递）', A.state.applications.every(x => /^[\u4e00-\u9fff]|^offer$/.test(x['投递状态'])));
+t('语言切换按钮存在', html.includes('id="langBtn"'));
+t('i18n 词表存在', html.includes('const EN = {') && html.includes('function localize('));
+t('状态 option 带显式 value（防翻译污染数据）', html.includes('value="${esc(s)}"'));
+t('textarea 内容受保护（备注为数据）', A.localize('<textarea data-k="备注">备注：笔试通过</textarea>').includes('备注：笔试通过'));
+t('localize 不碰 value 属性', A.localize('<input value="已投递">').includes('value="已投递"'));
+t('T() 精确翻译状态', A.T('已投递') === 'Applied', A.T('已投递'));
+t('T() 正则翻译动态文案', A.T('共 12 家') === '12 companies', A.T('共 12 家'));
 
 console.log('\n通过 ' + ok.length + ' 项：');
 ok.forEach(x => console.log('  ✓ ' + x));

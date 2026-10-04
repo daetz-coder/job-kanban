@@ -93,7 +93,7 @@ def main():
     args = ap.parse_args()
     path = args.data if os.path.isabs(args.data) else os.path.join(HERE, args.data)
     if not os.path.exists(path):
-        sys.exit('找不到台账文件：%s' % path)
+        sys.exit('Ledger file not found: %s' % path)
 
     data = json.load(io.open(path, encoding='utf-8'))
     apps = data['applications']
@@ -116,14 +116,14 @@ def main():
 
     json.dump(data, io.open(path, 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
 
-    print('检测完成，共 %d 个链接：' % len(apps))
+    print('Checked %d links:' % len(apps))
     for k, v in sorted(tally.items(), key=lambda kv: -kv[1]):
         print('  %-20s %d' % (k, v))
     bad = [(a['企业'], classify(c, n), a.get('投递链接', ''))
            for a, (c, f, n) in zip(apps, results)
            if classify(c, n).startswith('真问题')]
     if bad:
-        print('\n需要处理：')
+        print('\nNeeds attention:')
         for co, label, url in bad:
             print('  %-14s %-22s %s' % (co, label, url))
 

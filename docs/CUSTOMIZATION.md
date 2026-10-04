@@ -1,10 +1,10 @@
-# 自定义指南
+# Customization guide
 
-这个工具刻意做得「好改」：没有构建步骤，没有依赖，改完刷新页面即可。
+This tool is deliberately easy to modify: no build step, no dependencies — edit and refresh the page.
 
-## 1. 改状态阶段（加「群面」「AI 面试」「背调」等）
+## 1. Change the stages (add "Group interview", "AI interview", …)
 
-编辑 `dashboard.html`，找到顶部这几行：
+In `dashboard.html`, near the top of the script:
 
 ```js
 const PIPELINE = ['未投递','已投递','综合素质评测','笔试','一面','二面','三面','HR面','offer'];
@@ -21,77 +21,77 @@ const BOARD = [
 const BADGE = { '未投递':'b-todo', /* … */ };
 ```
 
-改完这些，**看板列、推进按钮、进度条、拖拽目标、下拉选项、漏斗统计会全线自动生效**，不需要改别处。
+Changing these **automatically updates** the lanes, the advance button, the progress bar, drag targets, dropdown options and the funnel.
 
-新增阶段示例（插入「群面」到一面之前）：
+Example — insert a "Group interview" stage before Interview 1:
 
 ```js
 const PIPELINE = ['未投递','已投递','综合素质评测','笔试','群面','一面','二面','三面','HR面','offer'];
 const BOARD = [
-  // …前面不变
-  {key:'group', label:'群面', status:'群面', match:s=>s==='群面'},   // 新增一列
+  // …unchanged above
+  {key:'group', label:'群面', status:'群面', match:s=>s==='群面'},          // new lane
   {key:'interview', label:'面试中', status:'一面', match:s=>['一面','二面','三面','HR面'].includes(s)},
-  // …后面不变
+  // …unchanged below
 ];
-const BADGE = { /* … */ '群面':'b-quality' };   // 复用已有配色，或自定义 .b-xxx
+const BADGE = { /* … */ '群面':'b-quality' };    // reuse a colour or add your own .b-xxx
 ```
 
-> 注意：`BOARD` 的列数变了，记得同步调整 CSS 里的 `grid-template-columns: repeat(N, …)` 和 `min-width`。
+> The lane count changed, so also update the CSS: `grid-template-columns: repeat(N, …)` and `min-width` for `.board`.
 
-## 2. 改统计口径
+Add the English label to the i18n table (`const EN`) so the English UI shows it too — or leave it, in which case the Chinese value is displayed as-is.
 
-`renderFunnel()` 里每个指标就是一行：
+## 2. Change the metrics
+
+Each funnel metric is one line in `renderFunnel()`:
 
 ```js
 const oa = state.applications.filter(a=>reached(a,['笔试','一面','二面','三面','HR面','offer'])).length;
 ```
 
-想加「进二面率」就照抄一行，改状态数组即可；想改漏斗卡片顺序，调整下面的 `cards` 数组。
+Copy a line and change the stage array to add e.g. "interview-2 rate"; reorder the cards via the `cards` array below it.
 
-## 3. 改停滞提醒天数
+## 3. Change the stale threshold
 
 ```js
-const STALE_DAYS = 7;   // 改成 5 就是 5 天无进展高亮
+const STALE_DAYS = 7;   // set to 5 for a 5-day reminder
 ```
 
-## 4. 加自定义字段（薪资范围、联系人、投递编号…）
+## 4. Add custom fields (salary range, contact, req id…)
 
-**不需要改代码**。数据里多出来的键会被原样保留（`normalize()` 只补默认键，不删未知键）。
+**No code change needed.** Extra keys are preserved verbatim (`normalize()` only fills defaults; it never deletes unknown keys).
 
-想让它在编辑弹窗里可编辑，在 `openEditor()` 里的字段区加一行：
+To make it editable in the dialog, add one row in `openEditor()`:
 
 ```js
 ${field('薪资范围', a['薪资范围'], 'wide')}
 ```
 
-（`field` 是现有的小工具函数，照抄旁边的字段写法即可。）
+(`field` is the existing helper — copy the style of the neighbouring fields.)
 
-## 5. 改梯队分类
+## 5. Change the tier categories
 
-梯队是纯数据字段（`梯队`），改 `data/ledger.json` 里的值，或在「筛选」下拉里新增选项：
+Tiers are a plain data field (`梯队`). Either edit values in `data/ledger.json`, or extend the filter dropdown in `renderTier()`:
 
 ```js
-// renderTier() 里
-['', '第一梯队-互联网大厂', '第二梯队-AI/科技独角兽', '你的新梯队']
+['', '第一梯队-互联网大厂', '第二梯队-AI/科技独角兽', 'your-new-tier']
 ```
 
-## 6. 换成自己的企业库（自动补齐）
+## 6. Use your own company library (auto-fill)
 
-看板支持「输入企业名 → 自动补齐岗位/地点/链接/梯队」，数据来自当前台账本身（`LIBRARY`）。把你自己的企业清单导进去即可：
+The board can auto-fill position/location/link/tier when you type a company name; the library comes from the current ledger (`LIBRARY`). Import your own list:
 
 ```bash
-# 最省事的做法：直接用示例数据改，或写个脚本生成
 python - <<'PY'
 import io, json
 d = json.load(io.open('data/sample-ledger.json', encoding='utf-8'))
-d['applications'] = [ /* 你的企业列表 */ ]
+d['applications'] = [ /* your companies */ ]
 json.dump(d, io.open('data/ledger.json','w',encoding='utf-8'), ensure_ascii=False, indent=2)
 PY
 ```
 
-## 7. 换主题色 / 深色模式
+## 7. Theme colours / dark mode
 
-顶部 `:root` 里全是 CSS 变量：
+Everything is a CSS variable in `:root`:
 
 ```css
 :root{
@@ -100,7 +100,7 @@ PY
 }
 ```
 
-深色模式只需加一段覆盖（社区 PR 欢迎）：
+Dark mode is a single override (PRs welcome):
 
 ```css
 @media (prefers-color-scheme: dark){
@@ -108,18 +108,24 @@ PY
 }
 ```
 
-## 8. 改端口 / 数据位置
+## 8. Change the port or the data location
 
 ```bash
 python server.py --port 9000 --data ~/Documents/my-ledger.json
 ```
 
-写进 `start.bat` / `start.sh` 就能固化下来。
+Put it in `start.bat` / `start.sh` to make it permanent.
 
-## 9. 部署成在线 Demo（GitHub Pages）
+## 9. Deploy an online demo (GitHub Pages)
 
-仓库自带 `.github/workflows/pages.yml`：推到 `main` 后会自动把 `dashboard.html` 发布为站点首页。在线版本没有后端，数据存在浏览器本地（也可用「绑定本地文件」直接写盘）。
+`.github/workflows/pages.yml` publishes `dashboard.html` as the site root on every push to `main`. The hosted version has no backend: data lives in browser storage (you can still use "Bind local file" to write to disk directly).
 
-## 10. 加阶段后老数据怎么办
+## 10. Add a UI language
 
-不用迁移。老记录的状态值仍然有效；新阶段只是多了一个可选项。若你把某个阶段**改名**，请顺带在 `data/ledger.json` 里全局替换旧值（编辑器或脚本均可），否则该状态会落到「未投递」列。
+1. Add entries to `const EN` (exact strings) or `EN_RULES` (strings containing numbers/names)
+2. Add dialog/toast templates to `const EN_TPL`
+3. For a third language, generalise `T()`/`localize()` to pick a dictionary by `lang`
+
+## 11. What happens to old data after adding a stage?
+
+Nothing to migrate. Existing status values stay valid; the new stage is simply an extra option. If you **rename** a stage, replace the old value across `data/ledger.json` (editor or script) — otherwise those records fall into the "Not applied" lane.

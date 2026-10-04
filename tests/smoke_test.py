@@ -70,11 +70,11 @@ def wait_up(base, timeout=20):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--keep', action='store_true', help='结束后不停止服务')
+    ap.add_argument('--keep', action='store_true', help='do not stop the server afterwards')
     args = ap.parse_args()
 
     if not os.path.exists(SAMPLE):
-        sys.exit('找不到示例数据：%s' % SAMPLE)
+        sys.exit('Sample data not found: %s' % SAMPLE)
 
     tmpdir = tempfile.mkdtemp(prefix='jobtracker-smoke-')
     data = os.path.join(tmpdir, 'smoke.json')
@@ -82,39 +82,39 @@ def main():
     port = free_port()
     base = 'http://127.0.0.1:%d' % port
 
-    print('启动服务：%s（数据：临时文件）' % base)
+    print('Starting server: %s (temporary data file)' % base)
     proc = subprocess.Popen(
         [sys.executable, os.path.join(HERE, 'server.py'),
          '--port', str(port), '--no-browser', '--data', data],
         cwd=HERE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     try:
-        check('服务在 20 秒内就绪', wait_up(base))
+        check('Server is ready within 20s', wait_up(base))
         if not ok:
             out = proc.stdout.read(2000).decode('utf-8', 'replace') if proc.stdout else ''
-            print('服务输出：\n' + out)
+            print('Server output:\n' + out)
             return finish(proc, tmpdir, args)
 
         # 1. 页面
         status, html, _ = call('GET', base + '/')
-        check('GET / 返回看板页面', status == 200 and '投递看板' in html, 'status=%s' % status)
+        check('GET / returns the dashboard page', status == 200 and 'Job Kanban' in html, 'status=%s' % status)
 
         # 2. 整份读取
         status, body, headers = call('GET', base + '/api/state')
         state = json.loads(body)
         n0 = len(state['applications'])
-        check('GET /api/state 可读', status == 200 and n0 > 0, '%d 条' % n0)
-        check('响应头带 X-File-Mtime', headers.get('X-File-Mtime') not in (None, '', '0'),
+        check('GET /api/state is readable', status == 200 and n0 > 0, '%d records' % n0)
+        check('Response carries X-File-Mtime', headers.get('X-File-Mtime') not in (None, '', '0'),
               headers.get('X-File-Mtime'))
 
         # 3. 按条新增
-        rec = {'id': 'smoke-001', '企业': '冒烟测试公司', '投递状态': '已投递', '岗位': '测试岗位'}
+        rec = {'id': 'smoke-001', '企业': 'Smoke Test Co', '投递状态': '已投递', '岗位': 'Test Position'}
         status, body, _ = call('PUT', base + '/api/app/smoke-001', rec)
-        check('PUT 新增单条', status == 200, body.strip()[:60])
+        check('PUT creates a single record', status == 200, body.strip()[:60])
         _, body, _ = call('GET', base + '/api/state')
         apps = json.loads(body)['applications']
-        check('新增后记录数 +1', len(apps) == n0 + 1, '%d -> %d' % (n0, len(apps)))
-        check('新记录内容正确',
-              any(a.get('id') == 'smoke-001' and a.get('企业') == '冒烟测试公司' for a in apps))
+        check('Record count +1 after create', len(apps) == n0 + 1, '%d -> %d' % (n0, len(apps)))
+        check('New record content is correct',
+              any(a.get('id') == 'smoke-001' and a.get('企业') == 'Smoke Test Co' for a in apps))
 
         # 4. 按条更新（不影响其它记录）
         rec2 = dict(rec)
@@ -124,34 +124,34 @@ def main():
         apps2 = json.loads(body)['applications']
         target = [a for a in apps2 if a.get('id') == 'smoke-001'][0]
         others = [a for a in apps2 if a.get('id') != 'smoke-001']
-        check('PUT 更新单条生效', target.get('投递状态') == '笔试', target.get('投递状态'))
-        check('更新未影响其它记录', len(others) == n0, '%d 条' % len(others))
+        check('PUT updates the record', target.get('投递状态') == '笔试', target.get('投递状态'))
+        check('Update left other records untouched', len(others) == n0, '%d records' % len(others))
 
         # 5. 按条删除
         status, _, _ = call('DELETE', base + '/api/app/smoke-001')
-        check('DELETE 单条', status == 200, 'status=%s' % status)
+        check('DELETE removes a single record', status == 200, 'status=%s' % status)
         _, body, _ = call('GET', base + '/api/state')
         apps3 = json.loads(body)['applications']
-        check('删除后回到原数量', len(apps3) == n0, '%d -> %d' % (n0, len(apps3)))
+        check('Record count restored after delete', len(apps3) == n0, '%d -> %d' % (n0, len(apps3)))
 
         # 6. 删除不存在的 id
         try:
             call('DELETE', base + '/api/app/not-exist-xyz')
-            check('删除不存在的 id 返回 404', False, '未报错')
+            check('Deleting an unknown id returns 404', False, 'no error raised')
         except urllib.error.HTTPError as e:
-            check('删除不存在的 id 返回 404', e.code == 404, 'status=%s' % e.code)
+            check('Deleting an unknown id returns 404', e.code == 404, 'status=%s' % e.code)
 
         # 7. 写入前自动备份
         backup_dir = os.path.join(os.path.dirname(data), '.backup')
         n_bak = len(os.listdir(backup_dir)) if os.path.isdir(backup_dir) else 0
-        check('写前自动备份到 .backup/', n_bak > 0, '%d 份' % n_bak)
+        check('Pre-write backup created in .backup/', n_bak > 0, '%d files' % n_bak)
 
         # 8. 非法载荷被拒绝
         try:
             call('POST', base + '/api/state', {'nope': 1})
-            check('非法整份载荷被拒绝(400)', False, '未报错')
+            check('Invalid full payload rejected (400)', False, 'no error raised')
         except urllib.error.HTTPError as e:
-            check('非法整份载荷被拒绝(400)', e.code == 400, 'status=%s' % e.code)
+            check('Invalid full payload rejected (400)', e.code == 400, 'status=%s' % e.code)
 
     finally:
         finish(proc, tmpdir, args)
@@ -165,12 +165,12 @@ def finish(proc, tmpdir, args):
         except Exception:
             proc.kill()
     shutil.rmtree(tmpdir, ignore_errors=True)
-    print('\n通过 %d 项，失败 %d 项' % (len(ok), len(bad)))
+    print('\n%d passed, %d failed' % (len(ok), len(bad)))
     if bad:
         for b in bad:
             print('  [FAIL] ' + b)
         return 1
-    print('冒烟测试全部通过')
+    print('Smoke test passed')
     return 0
 
 
