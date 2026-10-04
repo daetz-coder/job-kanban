@@ -49,4 +49,4 @@
 - **权威数据在磁盘而非 localStorage**：localStorage 会被清缓存 / 换浏览器清掉，且无法进 git。
 - **选择 JSON 而非 SQLite**：单人几百条数据，JSON 的 git 可读性与可迁移性更重要；数据风险用「按条写入 + 写锁 + 原子替换」解决，而非换存储引擎。
 
-[1.0.0]: https://github.com/<your-name>/job-tracker/releases/tag/v1.0.0
+[1.0.0]: https://github.com/daetz-coder/job-tracker/releases/tag/v1.0.0

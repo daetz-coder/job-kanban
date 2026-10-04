@@ -48,7 +48,7 @@ Four principles:
 Requires **Python 3.8+**. No pip install needed.
 
 ```bash
-git clone https://github.com/<your-name>/job-tracker.git
+git clone https://github.com/daetz-coder/job-tracker.git
 cd job-tracker
 python server.py
 ```

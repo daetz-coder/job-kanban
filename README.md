@@ -83,7 +83,7 @@
 需要 **Python 3.8+**（不需要 pip 安装任何东西）。
 
 ```bash
-git clone https://github.com/<your-name>/job-tracker.git
+git clone https://github.com/daetz-coder/job-tracker.git
 cd job-tracker
 python server.py
 ```

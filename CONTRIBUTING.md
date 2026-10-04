@@ -13,7 +13,7 @@
 ## 开发环境
 
 ```bash
-git clone https://github.com/<your-name>/job-tracker.git
+git clone https://github.com/daetz-coder/job-tracker.git
 cd job-tracker
 python server.py          # 启动本地服务（会自动用示例数据初始化）
 ```
@@ -70,7 +70,7 @@ CI 会在 Ubuntu 与 Windows、多个 Node / Python 版本上跑测试，并检�
 
 ## 报告问题
 
-请用 [Issue 模板](https://github.com/<your-name>/job-tracker/issues/new/choose)，并尽量附上：
+请用 [Issue 模板](https://github.com/daetz-coder/job-tracker/issues/new/choose)，并尽量附上：
 
 - 操作系统 / 浏览器版本 / Python 版本
 - 复现步骤

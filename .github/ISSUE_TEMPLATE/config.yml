@@ -1,11 +1,11 @@
 blank_issues_enabled: false
 contact_links:
   - name: 📖 先看文档
-    url: https://github.com/<your-name>/job-tracker#常见问题
+    url: https://github.com/daetz-coder/job-tracker#常见问题
     about: 常见问题（数据存哪 / 为什么不用 SQLite / 端口占用 / 拖拽无反应）大多已在 README 里解答
   - name: 🏗️ 了解架构与设计取舍
-    url: https://github.com/<your-name>/job-tracker/blob/main/docs/ARCHITECTURE.md
+    url: https://github.com/daetz-coder/job-tracker/blob/main/docs/ARCHITECTURE.md
     about: 想改数据层或同步逻辑，先看这份说明
   - name: 🔒 安全漏洞
-    url: https://github.com/<your-name>/job-tracker/security/advisories/new
+    url: https://github.com/daetz-coder/job-tracker/security/advisories/new
     about: 请勿公开提交安全问题，用私密渠道报告
