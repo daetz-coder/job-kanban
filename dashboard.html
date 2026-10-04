@@ -1,0 +1,1712 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>投递看板 · 2027 届校招 AI Agent</title>
+<style>
+  :root{
+    --bg:#f5f6f8; --card:#fff; --line:#e5e7eb; --ink:#1f2329; --muted:#7a828c;
+    --brand:#2f6fed; --brand-soft:#eaf1ff; --warn:#d97706; --danger:#d14343; --ok:#1c8a4a;
+    --radius:12px; --shadow:0 2px 10px rgba(20,40,80,.06);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+       background:var(--bg);color:var(--ink);padding:0}
+
+  /* ---------- 布局：左侧边栏 + 主区（主区只留视图切换，纵向全给看板） ---------- */
+  .app{display:flex;align-items:flex-start;min-height:100vh}
+  .sidebar{width:262px;flex:0 0 262px;background:var(--card);border-right:1px solid var(--line);
+           padding:16px 14px 24px;display:flex;flex-direction:column;gap:16px;
+           position:sticky;top:0;height:100vh;overflow-y:auto}
+  .brand h1{font-size:19px;font-weight:700}
+  .brand .sub{font-size:12px;color:var(--muted);margin-top:2px}
+  .side-sec{display:flex;flex-direction:column;gap:8px}
+  .side-h{font-size:11.5px;color:var(--muted);font-weight:700;letter-spacing:.4px}
+  .side-sec input[type=search],.side-sec select{width:100%;padding:7px 10px;border:1px solid var(--line);
+           border-radius:8px;font-size:13px;background:#fff;color:var(--ink)}
+  .side-sec .pills{flex-direction:column;align-items:stretch}
+  .side-sec .pill{text-align:center}
+  .side-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .side-grid .btn{font-size:12px;padding:7px 6px}
+  .filebox{display:flex;flex-direction:column;gap:6px}
+  .filestat{font-size:11.5px;display:flex;align-items:center;gap:6px;line-height:1.4}
+  .dot{width:7px;height:7px;border-radius:50%;flex:none;background:#c9ced6}
+  .dot.ok{background:#1c8a4a}
+  .dot.warn{background:#d97706}
+  .dot.bad{background:#d14343}
+  .main{flex:1;min-width:0;padding:12px 16px 40px;display:flex;flex-direction:column;gap:10px}
+  .topbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .boardWrap{overflow-x:auto;padding-bottom:4px}
+  /* 窄屏：侧栏回到顶部，看板单列 */
+  @media(max-width:900px){
+    .app{flex-direction:column}
+    .sidebar{width:auto;flex:none;height:auto;position:static;border-right:0;border-bottom:1px solid var(--line)}
+    .funnel{flex-direction:row;flex-wrap:wrap}
+    .fcard{flex:1 1 118px}
+    .side-sec .pills{flex-direction:row;flex-wrap:wrap}
+    .boardWrap{overflow-x:visible}
+    .board{min-width:0;grid-template-columns:1fr}
+  }
+
+  /* 侧栏内的统计卡：纵向紧凑行 */
+  .funnel{display:flex;flex-direction:column;gap:6px}
+  .fcard{background:#fafbfc;border:1px solid var(--line);border-radius:9px;padding:7px 11px;
+         display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+  .fcard .k{font-size:12px;color:var(--muted)}
+  .fcard .v{font-size:17px;font-weight:700;line-height:1.1}
+  .fcard .r{font-size:10.5px;color:var(--brand);margin-left:auto}
+  .pills{display:flex;gap:6px;flex-wrap:wrap}
+  .pill{padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--card);cursor:pointer;font-size:12.5px;color:var(--muted);user-select:none}
+  .pill.active{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}
+  .seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .seg button{border:0;background:var(--card);padding:7px 13px;cursor:pointer;font-size:12.5px;color:var(--muted)}
+  .seg button.active{background:var(--brand);color:#fff;font-weight:600}
+  .btn{padding:8px 13px;border-radius:8px;border:1px solid var(--line);background:var(--card);cursor:pointer;font-size:13px;color:var(--ink);white-space:nowrap}
+  .btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+  .btn.ghost{background:transparent}
+  .btn.danger{color:var(--danger);border-color:#f2c9c9;background:#fdf3f3}
+  .count{font-size:12.5px;color:var(--muted)}
+
+  /* 看板：每列是一条等高「车道」，整列都是投放区（不必精确拖到已有卡片上）
+     车道长度 = 112vh（原来 56vh 的两倍），列内超高时内部滚动 */
+  .board{display:grid;grid-template-columns:repeat(7,minmax(178px,1fr));gap:12px;align-items:stretch;min-width:1330px}
+  @media(max-width:760px){.col{height:auto;min-height:60vh}}
+  .col{background:#eef0f3;border-radius:12px;padding:10px;border:1px dashed transparent;
+       display:flex;flex-direction:column;gap:8px;
+       height:112vh;overflow-y:auto}
+  .col.over{border-color:var(--brand);background:var(--brand-soft)}
+  .drop-hint{flex:1 1 auto;min-height:46px;display:flex;align-items:center;justify-content:center;text-align:center;
+             color:#a9b0ba;font-size:11.5px;border:1px dashed #d5dae1;border-radius:8px;padding:8px}
+  .col.over .drop-hint{border-color:var(--brand);color:var(--brand);background:#fff}
+  .col-h{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;font-weight:700;color:#4b5563;padding:2px 4px 8px}
+  .col-h .n{background:#fff;border-radius:999px;padding:1px 8px;font-size:11.5px;color:var(--muted);font-weight:600}
+  .kcard{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 11px;cursor:grab;box-shadow:var(--shadow)}
+  .kcard:active{cursor:grabbing}
+  .kcard.dragging{opacity:.45}
+  /* 分组卡：同一家公司的多个岗位合并成一张卡，卡内一行一个岗位 */
+  .kcard.grouped{cursor:default}
+  .prows{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+  .prow{border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:#fafbfc}
+  .prow-t{display:flex;justify-content:space-between;gap:6px;align-items:center;font-size:12.5px}
+  .prow-m{font-size:11px;color:var(--muted);margin-top:2px}
+  .prow-a{display:flex;gap:5px;margin-top:5px;align-items:center}
+  .prow-a select{flex:1;font-size:11.5px;padding:3px 6px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink)}
+  .kcard .t{font-weight:700;font-size:13.5px;display:flex;justify-content:space-between;gap:6px}
+  .kcard .p{font-size:12px;color:var(--muted);margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .kcard .m{display:flex;gap:8px;flex-wrap:wrap;margin-top:7px;font-size:11px;color:var(--muted)}
+  .kcard .badge{font-size:11px}
+  .star{color:#f59e0b}
+
+  /* 列表 */
+  table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  th,td{padding:10px 12px;text-align:left;font-size:13px;border-bottom:1px solid var(--line);vertical-align:middle}
+  th{background:#fafbfc;font-size:12px;color:var(--muted);font-weight:600;cursor:pointer;user-select:none;white-space:nowrap}
+  th:hover{color:var(--brand)}
+  tr:last-child td{border-bottom:0}
+  tbody tr{cursor:pointer}
+  tbody tr:hover{background:#fafbff}
+  .badge{font-size:12px;font-weight:600;padding:2.5px 10px;border-radius:999px;white-space:nowrap;display:inline-block}
+  .b-todo{background:#eef0f3;color:#5b6470}
+  .b-applied{background:#eaf1ff;color:#2f6fed}
+  .b-oa{background:#f3ecff;color:#6d3ff0}
+  .b-quality{background:#eef6ff;color:#0b6bcb}
+  .b-iv{background:#e6f7f3;color:#0d8f7a}
+  .b-offer{background:#e7f6ec;color:#1c8a4a}
+  .b-closed{background:#fdecec;color:#d14343}
+  .tag{font-size:11px;padding:2px 7px;border-radius:6px;background:#f0f1f4;color:var(--muted);white-space:nowrap}
+  /* 投递链接：一键新标签打开 + 可访问性状态 */
+  .gotolink{font-size:11.5px;color:var(--brand);text-decoration:none;border:1px solid #cddffb;background:#f5f9ff;
+            border-radius:6px;padding:2px 8px;white-space:nowrap;display:inline-block}
+  .gotolink:hover{background:var(--brand);color:#fff;border-color:var(--brand)}
+  .gotolink.off{color:var(--muted);border-color:var(--line);background:#f7f8fa;cursor:not-allowed}
+  .lstatus{font-size:10.5px;padding:1.5px 6px;border-radius:5px;white-space:nowrap;display:inline-block}
+  .lstatus.ok{background:#e7f6ec;color:#1c8a4a}
+  .lstatus.bad{background:#fdecec;color:#d14343}
+  .lstatus.warn{background:#fff4e5;color:#b45309}
+  .lstatus.muted{background:#f0f1f4;color:var(--muted)}
+  .chk{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:5px;white-space:nowrap;cursor:pointer;user-select:none}
+  .chk input{cursor:pointer}
+  /* 在招岗位块 */
+  .pos{border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px;background:#fafbfc}
+  .pos.focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+  .pos-foot{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+  .stale{color:var(--warn);font-weight:600}
+  .overdue{color:var(--danger);font-weight:600}
+  .muted{color:var(--muted)}
+  .row-actions{display:flex;gap:6px}
+  .mini{border:1px solid var(--line);background:#fff;border-radius:6px;padding:3px 8px;font-size:11.5px;cursor:pointer;color:var(--muted)}
+  .mini:hover{color:var(--brand);border-color:var(--brand)}
+  .empty{text-align:center;color:var(--muted);padding:56px 0}
+
+  /* 弹窗 */
+  .modal-bg{position:fixed;inset:0;background:rgba(15,23,42,.42);display:none;align-items:flex-start;justify-content:center;z-index:60;padding:26px 16px;overflow:auto}
+  .modal-bg.show{display:flex}
+  .modal{background:#fff;border-radius:14px;width:100%;max-width:680px;padding:20px;box-shadow:0 24px 70px rgba(0,0,0,.22)}
+  .modal h2{font-size:17px;margin-bottom:4px}
+  .modal .sub{font-size:12px;color:var(--muted);margin-bottom:14px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+  .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+  .field input,.field select,.field textarea{width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;background:#fff;color:var(--ink)}
+  .field textarea{min-height:50px;resize:vertical}
+  .field.wide{grid-column:1/-1}
+  .flow{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:12px 0 4px}
+  .step{font-size:11.5px;padding:3px 9px;border-radius:999px;background:#f0f1f4;color:var(--muted)}
+  .step.done{background:var(--brand-soft);color:var(--brand);font-weight:600}
+  .step.now{background:var(--brand);color:#fff;font-weight:700}
+  .hist{margin-top:12px;font-size:12.5px}
+  .hist table{background:transparent;border:0}
+  .hist th,.hist td{border-bottom:1px solid var(--line);padding:6px 8px;font-size:12px;cursor:default}
+  .hist th{background:transparent;cursor:default}
+  .interviews{margin-top:12px}
+  .iv{display:grid;grid-template-columns:115px 84px 92px 1fr 34px;gap:6px;margin-bottom:6px;align-items:center}
+  .iv input{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-size:12.5px}
+  .iv .del{border:0;background:#fdecec;color:var(--danger);border-radius:6px;cursor:pointer;height:30px}
+  .actions{display:flex;gap:8px;margin-top:16px;justify-content:space-between;align-items:center}
+  .actions .right{display:flex;gap:8px}
+  @media(max-width:620px){.iv{grid-template-columns:1fr 1fr}.iv .del{grid-column:2}}
+
+  /* toast */
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:#1f2329;color:#fff;
+         border-radius:10px;padding:11px 16px;font-size:13px;display:flex;gap:12px;align-items:center;opacity:0;pointer-events:none;transition:.18s;z-index:80}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
+  .toast button{background:transparent;border:1px solid #4b5563;color:#fff;border-radius:6px;padding:3px 10px;cursor:pointer;font-size:12.5px}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <h1>投递看板</h1>
+      <div class="sub">2027 届校招 · AI Agent · 杭州</div>
+    </div>
+
+    <div class="funnel" id="funnel"></div>
+
+    <div class="side-sec">
+      <div class="side-h">筛选</div>
+      <input type="search" id="q" placeholder="搜索企业 / 岗位 / 城市 / 渠道…">
+      <select id="tier"></select>
+      <select id="sort">
+        <option value="default">排序：梯队 + 投递时间</option>
+        <option value="stale">排序：停滞最久</option>
+        <option value="applied">排序：投递日期</option>
+        <option value="priority">排序：优先级</option>
+        <option value="status">排序：状态进度</option>
+      </select>
+      <label class="chk" title="只看链接有异常（真问题 / 待确认）的企业"><input type="checkbox" id="onlyIssue"> 只看链接异常</label>
+    </div>
+
+    <div class="side-sec">
+      <div class="side-h">操作</div>
+      <button class="btn primary" id="addBtn">＋ 新增企业</button>
+      <div class="side-grid">
+        <button class="btn" id="importBtn" title="从 JSON 文件导入（会先自动备份，可用「撤销」回退）">导入</button>
+        <button class="btn" id="exportBtn" title="导出当前台账为 投递台账.json">导出</button>
+        <button class="btn" id="undoBtn" title="撤销上一步操作">撤销</button>
+        <button class="btn ghost" id="resetBtn" title="重置为初始 50 家（会先自动备份，可撤销）">重置</button>
+      </div>
+      <input type="file" id="importFile" accept=".json,application/json" style="display:none">
+      <div class="filebox">
+        <button class="btn" id="bindFileBtn" title="选择仓库里的 投递台账.json；之后每次改动都会自动写入该文件">绑定本地文件 · 自动保存</button>
+        <div class="filestat" id="fileStat"></div>
+      </div>
+      <div class="muted" style="font-size:11px;line-height:1.45">每次改动都会自动保存（本地服务/绑定文件时直接写入 投递台账.json），并留快照防丢。</div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="seg" id="viewSeg">
+        <button data-v="board" class="active">看板</button>
+        <button data-v="list">列表</button>
+      </div>
+      <div class="seg" id="unitSeg" title="按公司看：一家公司一张卡；按岗位看：每个在招岗位一张卡">
+        <button data-u="company" class="active">按公司</button>
+        <button data-u="position">按岗位</button>
+      </div>
+      <div class="count" id="count"></div>
+    </div>
+    <div class="boardWrap"><div id="boardView" class="board"></div></div>
+    <div id="listView" style="display:none"></div>
+  </main>
+</div>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h2 id="modalTitle">编辑</h2>
+    <div class="sub" id="modalSub"></div>
+    <div class="flow" id="flow"></div>
+    <div class="grid" id="modalBody"></div>
+    <div class="hist" id="histBox"></div>
+    <div class="actions">
+      <div class="left"><button class="btn danger" id="delBtn">删除</button></div>
+      <div class="right">
+        <button class="btn" id="advBtn">推进状态 →</button>
+        <button class="btn" id="modalCancel">取消</button>
+        <button class="btn primary" id="modalSave">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<datalist id="dlCompany"></datalist>
+<datalist id="dlChannel">
+  <option>官网</option><option>牛客</option><option>BOSS直聘</option>
+  <option>内推</option><option>邮箱</option><option>实习僧</option><option>猎聘</option>
+</datalist>
+<datalist id="dlResume">
+  <option>v1 通用版</option><option>v2 Agent强化版</option>
+</datalist>
+
+<div class="toast" id="toast"><span id="toastMsg"></span><button id="toastUndo" style="display:none">撤销</button></div>
+
+<script>
+const DEFAULT_DATA = {
+  "meta": {
+    "title": "求职投递看板 · 示例数据",
+    "schema": 3,
+    "说明": "这是示例数据，仅用于演示界面。真实台账由 server.py 写入 data/ledger.json（已在 .gitignore 中忽略）。",
+    "状态流转": "未投递 → 已投递 → 综合素质评测 → 笔试 → 一面 → 二面 → 三面 → HR面 → offer；任意阶段可终止为 已拒 / 放弃",
+    "状态可选值": ["未投递", "已投递", "综合素质评测", "笔试", "一面", "二面", "三面", "HR面", "offer", "已拒", "放弃"],
+    "停滞提醒阈值": "7 天（看板高亮，可在 dashboard.html 里改 STALE_DAYS）",
+    "字段说明": {
+      "id": "稳定标识，新增时自动生成",
+      "投递状态": "见『状态可选值』；拖拽或点『推进状态』会自动写入 状态历史",
+      "投递日期": "YYYY-MM-DD",
+      "简历版本": "本次投递用的简历版本或文件名",
+      "渠道": "官网 / 牛客 / BOSS直聘 / 内推 / 邮箱",
+      "内推": "内推人或联系人",
+      "优先级": "1-5",
+      "下一步": "如『完成笔试』",
+      "下一步截止": "YYYY-MM-DD，逾期标红",
+      "岗位列表": "一家公司可挂多个在招岗位，各自独立跟踪进度",
+      "面试记录": "数组，每条 {日期, 轮次, 结果, 备注}",
+      "状态历史": "数组，每条 {日期, 从, 到, 备注}，状态变更自动追加"
+    }
+  },
+  "applications": [
+    {
+      "id": "sample-001",
+      "企业": "示例科技",
+      "梯队": "第一梯队-互联网大厂",
+      "岗位": "AI 应用开发工程师",
+      "工作地点": "杭州 / 北京",
+      "投递链接": "https://example.com/campus",
+      "面试轮次": "3 轮",
+      "投递状态": "已投递",
+      "投递日期": "2026-09-20",
+      "简历版本": "v2 Agent强化版",
+      "渠道": "官网",
+      "内推": "",
+      "优先级": 5,
+      "下一步": "等待笔试通知",
+      "下一步截止": "",
+      "备注": "示例记录：展示『已投递』状态",
+      "岗位列表": [],
+      "面试记录": [],
+      "状态历史": [
+        { "日期": "2026-09-20", "从": "未投递", "到": "已投递", "备注": "看板拖拽" }
+      ],
+      "链接状态": "可访问",
+      "链接检测日期": "2026-10-04"
+    },
+    {
+      "id": "sample-002",
+      "企业": "演示网络",
+      "梯队": "第一梯队-互联网大厂",
+      "岗位": "大模型算法工程师",
+      "工作地点": "上海",
+      "投递链接": "https://example.com/jobs",
+      "面试轮次": "3-4 轮",
+      "投递状态": "综合素质评测",
+      "投递日期": "2026-09-15",
+      "简历版本": "v2 Agent强化版",
+      "渠道": "内推",
+      "内推": "张三",
+      "优先级": 4,
+      "下一步": "9/30 前完成在线测评",
+      "下一步截止": "2026-09-30",
+      "备注": "示例记录：展示『综合素质评测』与逾期标红",
+      "岗位列表": [],
+      "面试记录": [],
+      "状态历史": [
+        { "日期": "2026-09-15", "从": "未投递", "到": "已投递", "备注": "" },
+        { "日期": "2026-09-18", "从": "已投递", "到": "综合素质评测", "备注": "收到测评链接" }
+      ],
+      "链接状态": "可访问",
+      "链接检测日期": "2026-10-04"
+    },
+    {
+      "id": "sample-003",
+      "企业": "样例智能",
+      "梯队": "第二梯队-AI/科技独角兽",
+      "岗位": "Agent 平台开发工程师",
+      "工作地点": "杭州",
+      "投递链接": "https://example.com/careers",
+      "面试轮次": "3 轮",
+      "投递状态": "笔试",
+      "投递日期": "2026-09-10",
+      "简历版本": "v1 通用版",
+      "渠道": "牛客",
+      "内推": "",
+      "优先级": 3,
+      "下一步": "复习八股 + 刷题",
+      "下一步截止": "",
+      "备注": "示例记录：展示『笔试』状态",
+      "岗位列表": [],
+      "面试记录": [],
+      "状态历史": [
+        { "日期": "2026-09-10", "从": "未投递", "到": "已投递", "备注": "" },
+        { "日期": "2026-09-14", "从": "综合素质评测", "到": "笔试", "备注": "" }
+      ],
+      "链接状态": "可访问",
+      "链接检测日期": "2026-10-04"
+    },
+    {
+      "id": "sample-004",
+      "企业": "虚构云",
+      "梯队": "第二梯队-AI/科技独角兽",
+      "岗位": "RAG 工程师",
+      "工作地点": "深圳 / 杭州",
+      "投递链接": "https://example.com/join",
+      "面试轮次": "3 轮",
+      "投递状态": "一面",
+      "投递日期": "2026-08-28",
+      "简历版本": "v2 Agent强化版",
+      "渠道": "官网",
+      "内推": "",
+      "优先级": 5,
+      "下一步": "准备项目深挖问题",
+      "下一步截止": "",
+      "备注": "示例记录：展示『面试中』与面试记录",
+      "岗位列表": [
+        {
+          "岗位": "RAG 检索工程师",
+          "类型": "技术类",
+          "城市": "杭州",
+          "在招业务": "示例事业群 / 示例实验室",
+          "更新日期": "2026-09-03",
+          "投递状态": "一面",
+          "投递日期": "2026-08-28",
+          "简历版本": "v2 Agent强化版",
+          "备注": "主投岗位",
+          "状态历史": [
+            { "日期": "2026-08-28", "从": "未投递", "到": "已投递", "备注": "" },
+            { "日期": "2026-09-12", "从": "笔试", "到": "一面", "备注": "一面邀约" }
+          ]
+        },
+        {
+          "岗位": "知识库平台工程师",
+          "类型": "技术类",
+          "城市": "深圳",
+          "在招业务": "示例事业群",
+          "更新日期": "2026-08-24",
+          "投递状态": "已投递",
+          "投递日期": "2026-08-30",
+          "简历版本": "v2 Agent强化版",
+          "备注": "备选岗位",
+          "状态历史": [
+            { "日期": "2026-08-30", "从": "未投递", "到": "已投递", "备注": "" }
+          ]
+        }
+      ],
+      "面试记录": [
+        { "日期": "2026-09-20", "轮次": "一面", "结果": "待通知", "备注": "问 RAG 混合检索与重排取舍" }
+      ],
+      "状态历史": [
+        { "日期": "2026-08-28", "从": "未投递", "到": "已投递", "备注": "" },
+        { "日期": "2026-09-12", "从": "笔试", "到": "一面", "备注": "" }
+      ],
+      "链接状态": "可访问",
+      "链接检测日期": "2026-10-04"
+    },
+    {
+      "id": "sample-005",
+      "企业": "测试数据集团",
+      "梯队": "第三梯队-传统大厂/制造业",
+      "岗位": "智能体应用工程师",
+      "工作地点": "杭州",
+      "投递链接": "https://example.com/hr",
+      "面试轮次": "2-3 轮",
+      "投递状态": "offer",
+      "投递日期": "2026-08-05",
+      "简历版本": "v1 通用版",
+      "渠道": "BOSS直聘",
+      "内推": "",
+      "优先级": 4,
+      "下一步": "确认 offer 细节",
+      "下一步截止": "",
+      "备注": "示例记录：展示『Offer』状态",
+      "岗位列表": [],
+      "面试记录": [
+        { "日期": "2026-08-20", "轮次": "一面", "结果": "通过", "备注": "" },
+        { "日期": "2026-08-27", "轮次": "二面", "结果": "通过", "备注": "" }
+      ],
+      "状态历史": [
+        { "日期": "2026-08-05", "从": "未投递", "到": "已投递", "备注": "" },
+        { "日期": "2026-09-01", "从": "HR面", "到": "offer", "备注": "" }
+      ],
+      "链接状态": "可访问",
+      "链接检测日期": "2026-10-04"
+    },
+    {
+      "id": "sample-006",
+      "企业": "模板机器人",
+      "梯队": "第四梯队-AI创业公司",
+      "岗位": "具身智能算法工程师",
+      "工作地点": "杭州 / 北京",
+      "投递链接": "",
+      "面试轮次": "3 轮",
+      "投递状态": "未投递",
+      "投递日期": "",
+      "简历版本": "",
+      "渠道": "官网",
+      "内推": "",
+      "优先级": 2,
+      "下一步": "看官网岗位是否开放",
+      "下一步截止": "",
+      "备注": "示例记录：展示『未投递』（待投递清单）",
+      "岗位列表": [],
+      "面试记录": [],
+      "状态历史": [],
+      "链接状态": "无链接",
+      "链接检测日期": "2026-10-04"
+    }
+  ]
+};
+const STORAGE_KEY = 'toudi_ledger_v2';
+const SCHEMA_V = 2;
+
+const PIPELINE = ['未投递','已投递','综合素质评测','笔试','一面','二面','三面','HR面','offer'];
+const TERMINAL = ['已拒','放弃'];
+const STATUS_ALL = PIPELINE.concat(TERMINAL);
+const STALE_DAYS = 7;   // 超过 N 天无进展 → 高亮提醒
+
+const BOARD = [
+  {key:'todo',      label:'未投递',      status:'未投递',      match:s=>s==='未投递'},
+  {key:'applied',   label:'已投递',      status:'已投递',      match:s=>s==='已投递'},
+  {key:'quality',   label:'综合素质评测', status:'综合素质评测', match:s=>s==='综合素质评测'},
+  {key:'oa',        label:'笔试',        status:'笔试',        match:s=>s==='笔试'},
+  {key:'interview', label:'面试中',      status:'一面',        match:s=>['一面','二面','三面','HR面'].includes(s)},
+  {key:'offer',     label:'Offer',       status:'offer',       match:s=>s==='offer'},
+  {key:'closed',    label:'已结束',      status:'已拒',        match:s=>TERMINAL.includes(s)},
+];
+const GROUP = [{key:'all',label:'全部'}].concat(
+  BOARD.map(b=>({key:b.key,label:b.label,match:b.match}))
+);
+const BADGE = {'未投递':'b-todo','已投递':'b-applied','笔试':'b-oa','综合素质评测':'b-quality',
+  '一面':'b-iv','二面':'b-iv','三面':'b-iv','HR面':'b-iv','offer':'b-offer','已拒':'b-closed','放弃':'b-closed'};
+
+let state = load();
+let view = 'board';
+let unit = 'company';        // company | position
+let filter = {q:'', tier:'', group:'all', sort:'default', issue:false};
+let editing = null;          // 索引；-1 表示新增
+let dragFrom = null;         // 兼容旧变量
+let dragCi = null, dragPi = null;   // 拖拽源：公司下标 + 岗位下标（-1 = 公司级）
+
+/* ---------- 数据层 ---------- */
+/* 企业库：新增/编辑时按企业名自动补齐 岗位/工作地点/投递链接/梯队，减少手填 */
+const LIBRARY = ((DEFAULT_DATA && DEFAULT_DATA.applications) || []).map(x=>({
+  企业:x['企业'], 梯队:x['梯队'], 岗位:x['岗位'], 工作地点:x['工作地点'], 投递链接:x['投递链接']
+}));
+function lookupCompany(name){
+  const n = String(name||'').trim();
+  if(!n) return null;
+  return LIBRARY.find(x=>x['企业']===n)
+      || LIBRARY.find(x=>x['企业'].includes(n) || n.includes(x['企业']))
+      || null;
+}
+function applyLibrary(name){
+  const hit = lookupCompany(name); if(!hit) return false;
+  document.querySelectorAll('#modalBody [data-k]').forEach(el=>{
+    const k = el.dataset.k;
+    if(['岗位','工作地点','投递链接','梯队'].includes(k) && !String(el.value||'').trim()){
+      el.value = hit[k] || el.value;
+    }
+  });
+  return true;
+}
+
+function blankPosition(){
+  return {岗位:'', 类型:'', 城市:'', 在招业务:'', 更新日期:'',
+    投递状态:'未投递', 投递日期:'', 简历版本:'', 备注:'', 状态历史:[]};
+}
+function blank(){
+  return {id:'', 企业:'', 梯队:'第一梯队-互联网大厂', 岗位:'', 工作地点:'', 投递链接:'',
+    面试轮次:'', 投递状态:'未投递', 投递日期: today(), 简历版本:'', 渠道:'官网', 内推:'',
+    下一步:'', 下一步截止:'', 优先级:3, 备注:'', 岗位列表:[], 面试记录:[], 状态历史:[]};
+}
+function normalizePos(p){
+  const b = blankPosition();
+  Object.keys(b).forEach(k=>{ if(p[k]===undefined) p[k]=b[k]; });
+  if(!Array.isArray(p['状态历史'])) p['状态历史']=[];
+  return p;
+}
+function normalize(a){
+  const b = blank();
+  Object.keys(b).forEach(k=>{ if(a[k]===undefined) a[k]=b[k]; });
+  if(!Array.isArray(a['面试记录'])) a['面试记录']=[];
+  if(!Array.isArray(a['状态历史'])) a['状态历史']=[];
+  if(!Array.isArray(a['岗位列表'])) a['岗位列表']=[];
+  a['岗位列表'] = a['岗位列表'].map(normalizePos);
+  if(!a.id) a.id = 'c' + Math.random().toString(36).slice(2,9);
+  return a;
+}
+
+/* 公司级状态 = 名下所有岗位里最靠后的进度（完全由岗位推导，可升可降；无岗位时用公司自身状态） */
+function aggStatus(a){
+  const list = a['岗位列表']||[];
+  if(!list.length) return a['投递状态'];
+  const rank = s => {
+    if(TERMINAL.includes(s)) return -1;                 // 终止态不抬轿
+    const i = PIPELINE.indexOf(s);
+    return i<0 ? 0 : i;
+  };
+  const alive = list.filter(p=>!TERMINAL.includes(p['投递状态']));
+  if(!alive.length) return list[0]['投递状态'];          // 全部终止 → 取第一个终止态
+  return alive.reduce((best,p)=> rank(p['投递状态']) > rank(best['投递状态']) ? p : best, alive[0])['投递状态'];
+}
+/* 公司级投递日期 = 名下最早一次投递 */
+function aggAppliedDate(a){
+  const ds = (a['岗位列表']||[]).map(p=>p['投递日期']).filter(Boolean);
+  if(!ds.length) return a['投递日期'];
+  return ds.slice().sort()[0];
+}
+/* 有效状态：有岗位列表时按岗位聚合，否则用公司自身状态 */
+function effStatus(a){
+  return (a['岗位列表']||[]).length ? aggStatus(a) : a['投递状态'];
+}
+/* 岗位变动后，把公司级状态/日期同步为聚合结果 */
+function syncCompanyFromPositions(a){
+  const list = a['岗位列表']||[];
+  if(!list.length) return;
+  a['投递状态'] = aggStatus(a);
+  a['投递日期'] = aggAppliedDate(a);
+}
+
+/* 解析招聘页复制文本 → 岗位数组。支持形如：
+   全部在招职位（100）
+   AI 应用开发工程师 / 更新于 2026-09-03 / 技术类 / 北京 / 广州 / 杭州 / 上海 / 在招业务 / 示例事业群 A / 示例事业群 B */
+function parsePositions(text){
+  const lines = String(text||'').split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+  const isDate = s => /^更新于/.test(s);
+  const isBizTag = s => /^在招业务/.test(s);
+  const TYPE_RE = /^(技术类|产品类|设计类|运营类|市场类|职能类|金融类|销售类|算法类|工程类)$/;
+  const CITY_RE = /^[\u4e00-\u9fa5]{2,8}(\s*[\/、]\s*[\u4e00-\u9fa5]{2,8})+$/;
+  const out = [];
+  let cur = null;
+  for(let i=0;i<lines.length;i++){
+    const s = lines[i];
+    if(/^全部在招职位/.test(s) || s === '展开详情' || s === '收起详情') continue;
+    if(isDate(s)){ if(cur) cur['更新日期'] = s.replace(/^更新于\s*/,'').trim(); continue; }
+    if(isBizTag(s)){
+      const next = lines[i+1];
+      if(cur && next && !isDate(next) && !isBizTag(next)){ cur['在招业务'] = next; i++; }
+      continue;
+    }
+    if(TYPE_RE.test(s)){ if(cur) cur['类型'] = s; continue; }
+    if(CITY_RE.test(s) && cur && !cur['城市']){ cur['城市'] = s; continue; }
+    if(cur && cur['在招业务'] && !cur['城市'] && CITY_RE.test(s)){ cur['城市'] = s; continue; }
+    cur = blankPosition();
+    cur['岗位'] = s;
+    out.push(cur);
+  }
+  return out;
+}
+/* ---------- 数据保护：备份环 + 恢复 ---------- */
+const BACKUP_PREFIX = 'toudi_ledger_bak_';
+const BACKUP_KEEP = 10;
+const DAY_MARK = 'toudi_ledger_bak_day';
+function backupKeys(){
+  const keys = [];
+  try{
+    for(let i=0;i<localStorage.length;i++){
+      const k = localStorage.key(i);
+      if(k && k.indexOf(BACKUP_PREFIX)===0) keys.push(k);
+    }
+  }catch(e){}
+  return keys.sort();
+}
+function snapshot(reason){
+  try{
+    const payload = JSON.stringify({
+      ts: new Date().toISOString(), reason: reason||'',
+      count: (state.applications||[]).length, data: state });
+    localStorage.setItem(BACKUP_PREFIX + Date.now(), payload);
+    const keys = backupKeys();
+    while(keys.length > BACKUP_KEEP) localStorage.removeItem(keys.shift());
+    return true;
+  }catch(e){ return false; }
+}
+function listBackups(){
+  const out = [];
+  backupKeys().forEach(k=>{
+    try{ const o = JSON.parse(localStorage.getItem(k));
+      out.push({key:k, ts:o.ts||'', reason:o.reason||'', count:o.count||0}); }catch(e){}
+  });
+  return out.sort((a,b)=> String(b.ts).localeCompare(String(a.ts)));
+}
+function restoreBackup(key){
+  try{
+    const o = JSON.parse(localStorage.getItem(key));
+    if(!o || !o.data || !Array.isArray(o.data.applications)) return false;
+    state = o.data;
+    state.applications = state.applications.map(normalize);
+    undoHistory = [];                              // 恢复后重置撤销基线，避免撤回已废弃的中间态
+    pushHistory();
+    persist(); render();
+    return true;
+  }catch(e){ return false; }
+}
+
+function load(){
+  let d = null;
+  try{
+    const s = localStorage.getItem(STORAGE_KEY);
+    if(s){
+      try{
+        const parsed = JSON.parse(s);
+        if(parsed && Array.isArray(parsed.applications) && parsed.applications.length) d = parsed;
+      }catch(parseErr){
+        // 本地数据损坏：先原样留档，绝不覆盖
+        try{ localStorage.setItem(BACKUP_PREFIX + 'corrupt_' + Date.now(), s); }catch(e2){}
+        setTimeout(()=>alert('检测到本地数据损坏，已留档但未覆盖。请用「恢复上一版」或导入备份。'), 300);
+      }
+    }
+  }catch(e){}
+  if(!d) d = JSON.parse(JSON.stringify(DEFAULT_DATA));
+  d.applications = d.applications.map(normalize);
+  /* 不再自动合并同名公司：合并会改变记录数，必须由用户点「合并同名」确认 */
+  return d;
+}
+function persist(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    const now = Date.now();
+    localStorage.setItem(AT_KEY, String(now));      // 记录本地最后保存时间，供与文件 mtime 比对
+    localSavedAt = now;
+    // 每天首次保存自动留一份快照
+    const today = today_();
+    if(localStorage.getItem(DAY_MARK) !== today){
+      localStorage.setItem(DAY_MARK, today);
+      snapshot('每日自动备份');
+    }
+  }catch(e){}
+  scheduleFileWrite();          // 已绑定文件/本地服务 → 自动写入（无需手动导出）
+}
+function today_(){ return new Date().toISOString().slice(0,10); }
+
+/* ---------- 自动写入本地文件（File System Access API，绑定一次后全自动） ---------- */
+let fileHandle = null, fileWriteTimer = null, fileWritePending = false;
+let fileLastOK = null, fileLastAt = null, fileErr = '';
+function fsSupported(){ return typeof window !== 'undefined' && typeof window.showSaveFilePicker === 'function'; }
+function idbOpen(){
+  return new Promise((res, rej)=>{
+    if(!window.indexedDB) return rej(new Error('no indexeddb'));
+    const rq = indexedDB.open('toudi_ledger', 1);
+    rq.onupgradeneeded = ()=>{ if(!rq.result.objectStoreNames.contains('kv')) rq.result.createObjectStore('kv'); };
+    rq.onsuccess = ()=> res(rq.result);
+    rq.onerror = ()=> rej(rq.error);
+  });
+}
+async function idbSet(k, v){
+  try{
+    const db = await idbOpen();
+    await new Promise((res,rej)=>{ const tx = db.transaction('kv','readwrite'); tx.objectStore('kv').put(v,k); tx.oncomplete=()=>res(); tx.onerror=()=>rej(tx.error); });
+  }catch(e){}
+}
+async function idbGet(k){
+  try{
+    const db = await idbOpen();
+    return await new Promise((res,rej)=>{ const tx = db.transaction('kv','readonly'); const rq = tx.objectStore('kv').get(k); rq.onsuccess=()=>res(rq.result); rq.onerror=()=>rej(rq.error); });
+  }catch(e){ return null; }
+}
+async function bindFile(){
+  if(!fsSupported()){ toast('当前浏览器不支持自动写文件，请用 Chrome / Edge 打开（数据仍存在浏览器本地）'); return; }
+  try{
+    const h = await window.showSaveFilePicker({
+      suggestedName: '投递台账.json',
+      types: [{ description:'JSON', accept:{ 'application/json': ['.json'] } }]
+    });
+    fileHandle = h;
+    await idbSet('fileHandle', h);
+    const ok = await writeToFile();
+    toast(ok ? ('已绑定并写入 ' + (h.name||'文件') + '，之后自动保存') : '已绑定，但首次写入失败');
+    renderFileStatus();
+  }catch(e){ /* 用户取消 */ }
+}
+async function writeToFile(){
+  if(!fileHandle) return false;
+  try{
+    if(fileHandle.queryPermission){
+      const p = await fileHandle.queryPermission({ mode:'readwrite' });
+      if(p !== 'granted') return false;
+    }
+    const w = await fileHandle.createWritable();
+    await w.write(JSON.stringify(state, null, 2));
+    await w.close();
+    fileLastOK = true; fileLastAt = new Date(); fileErr = '';
+    return true;
+  }catch(e){ fileLastOK = false; fileErr = String((e && e.message) || e); return false; }
+}
+/* ---------- 本地服务模式（推荐）：由 serve_dashboard.py 提供，文件即权威数据源 ---------- */
+let serverMode = false;
+let syncReady = (typeof location !== 'undefined' && location.protocol === 'file:');
+const AT_KEY = STORAGE_KEY + '_at';
+let localSavedAt = 0;
+try{ localSavedAt = parseInt(localStorage.getItem(AT_KEY) || '0', 10) || 0; }catch(e){}
+
+async function detectServer(){
+  if(typeof location === 'undefined' || location.protocol === 'file:'){ syncReady = true; return false; }
+  if(typeof fetch !== 'function'){ syncReady = true; return false; }
+  try{
+    const r = await fetch('/api/state', { cache:'no-store' });
+    if(!r.ok){ syncReady = true; return false; }
+    serverMode = true;
+    const mtime = parseInt(r.headers.get('X-File-Mtime') || '0', 10) || 0;
+    const d = await r.json();
+    const fileCount = (d && Array.isArray(d.applications)) ? d.applications.length : 0;
+    const localCount = (state.applications || []).length;
+    /* 谁更完整用谁：记录数 → 有进度数 → 岗位数；完全相同时文件优先（文件是权威源）
+       这样浏览器里较旧/较残缺的本地状态不会把文件覆盖掉 */
+    const scoreOf = s => {
+      const apps = (s && s.applications) || [];
+      const filled = apps.filter(a=>a['投递状态'] && a['投递状态']!=='未投递').length;
+      const pos = apps.reduce((n,a)=>n+((a['岗位列表']||[]).length),0);
+      return [apps.length, filled, pos];
+    };
+    const ls = scoreOf(state), fs = scoreOf(d);
+    let cmp = 0;
+    for(let i=0;i<3;i++){ if(fs[i] !== ls[i]){ cmp = fs[i] - ls[i]; break; } }
+    const useFile = cmp > 0 || (cmp === 0 && mtime >= localSavedAt);
+    if(useFile && fileCount){
+      state = d;
+      state.applications = state.applications.map(normalize);
+      syncedSnapshot = snapshotOf();           // 已与文件一致，无需回写
+      fileLastOK = true; fileLastAt = new Date(mtime || Date.now());
+    }else if(localCount){
+      syncedSnapshot = null;                   // 本地更完整：全部视为待写，稍后整份推给服务
+      pendingPush = true;
+    }
+    const b = document.getElementById('bindFileBtn');
+    if(b){ b.style.display = 'none'; }
+    syncReady = true;
+    return true;
+  }catch(e){ syncReady = true; return false; }
+}
+let pendingPush = false;
+
+/* ---------- 按条同步：与上次已同步的快照对比，只发送发生变化的记录 ---------- */
+let syncedSnapshot = null;              // Map<id, JSON字符串>
+function snapshotOf(){
+  const m = new Map();
+  (state.applications || []).forEach(a=>{ if(a && a.id) m.set(a.id, JSON.stringify(a)); });
+  return m;
+}
+function diffSince(){
+  const now = snapshotOf();
+  const upserts = [], deletes = [];
+  now.forEach((json,id)=>{ if(!syncedSnapshot || syncedSnapshot.get(id) !== json) upserts.push(id); });
+  if(syncedSnapshot) syncedSnapshot.forEach((_,id)=>{ if(!now.has(id)) deletes.push(id); });
+  return { upserts: upserts, deletes: deletes, now: now };
+}
+async function putRecord(id){
+  const a = (state.applications||[]).find(x=>x && x.id === id);
+  if(!a) return false;
+  try{
+    const r = await fetch('/api/app/' + encodeURIComponent(id), {
+      method:'PUT', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(a) });
+    return r.ok;
+  }catch(e){ fileErr = String((e && e.message) || e); return false; }
+}
+async function deleteRecord(id){
+  try{
+    const r = await fetch('/api/app/' + encodeURIComponent(id), { method:'DELETE' });
+    return r.ok || r.status === 404;
+  }catch(e){ fileErr = String((e && e.message) || e); return false; }
+}
+async function postFull(){
+  try{
+    const r = await fetch('/api/state', {
+      method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(state) });
+    return r.ok;
+  }catch(e){ fileErr = String((e && e.message) || e); return false; }
+}
+async function pushToServer(){ return await flushSync(); }
+/* 只发变化的那几条；变化过多（导入/重置/首次同步）才整份替换 */
+async function flushSync(){
+  if(!serverMode) return await writeToFile();
+  const d = diffSince();
+  const total = (state.applications||[]).length;
+  if(!d.upserts.length && !d.deletes.length) return true;
+  const changed = d.upserts.length + d.deletes.length;
+  if(changed > Math.max(12, Math.floor(total * 0.4))){
+    const ok = await postFull();
+    if(ok) syncedSnapshot = d.now;
+    return ok;
+  }
+  let ok = true;
+  for(const id of d.deletes) ok = (await deleteRecord(id)) && ok;
+  for(const id of d.upserts) ok = (await putRecord(id)) && ok;
+  if(ok) syncedSnapshot = d.now;
+  return ok;
+}
+
+function scheduleFileWrite(){
+  if(!syncReady) return;                       // 初始同步完成前绝不写，防止用默认数据覆盖文件
+  if(!fileHandle && !serverMode) return;
+  fileWritePending = true; renderFileStatus();
+  clearTimeout(fileWriteTimer);
+  fileWriteTimer = setTimeout(async ()=>{
+    const ok = await flushSync();
+    fileLastOK = ok; if(ok) fileLastAt = new Date();
+    fileWritePending = false; renderFileStatus();
+  }, 600);
+}
+async function restoreFileHandle(){
+  const h = await idbGet('fileHandle');
+  if(h){ fileHandle = h; }              // 句柄保留；写入时校验权限
+  renderFileStatus();
+}
+function renderFileStatus(){
+  const el = document.getElementById('fileStat');
+  if(!el) return;
+  if(serverMode){
+    if(fileWritePending){ el.innerHTML = '<span class="dot warn"></span>正在写入 投递台账.json …'; return; }
+    if(fileLastOK === false){ el.innerHTML = '<span class="dot bad"></span>写入失败：' + esc(String(fileErr).slice(0,40)); return; }
+    el.innerHTML = '<span class="dot ok"></span>已自动保存到 投递台账.json（本地服务·按条同步）' +
+      (fileLastAt ? ' ' + fileLastAt.toTimeString().slice(0,8) : '');
+    return;
+  }
+  if(!fsSupported()){
+    const proto = (typeof location !== 'undefined' && location.protocol) ? location.protocol : '未知';
+    el.innerHTML = '<span class="dot warn"></span>当前为 ' + esc(proto) + ' 直开，浏览器不允许写文件<br>→ 双击「启动看板.bat」用本地服务打开即可自动保存';
+    return;
+  }
+  if(!fileHandle){
+    el.innerHTML = '<span class="dot warn"></span>未绑定文件 · 数据仅在浏览器本地';
+    return;
+  }
+  const name = fileHandle.name || '文件';
+  if(fileWritePending){ el.innerHTML = '<span class="dot warn"></span>正在写入 ' + esc(name) + ' …'; return; }
+  if(fileLastOK === true){
+    el.innerHTML = '<span class="dot ok"></span>已自动保存到 ' + esc(name) + ' ' + (fileLastAt ? fileLastAt.toTimeString().slice(0,8) : '');
+    return;
+  }
+  if(fileLastOK === false){
+    el.innerHTML = '<span class="dot bad"></span>写入失败，请重新绑定（' + esc(String(fileErr).slice(0,36)) + '）';
+    return;
+  }
+  el.innerHTML = '<span class="dot ok"></span>已绑定 ' + esc(name) + '（改动会自动写入）';
+}
+/* ---------- 撤销：内存中保留最近 40 个状态 ---------- */
+let undoHistory = [];
+function pushHistory(){
+  try{
+    undoHistory.push(JSON.stringify(state));
+    while(undoHistory.length > 40) undoHistory.shift();
+  }catch(e){}
+}
+function undo(){
+  if(undoHistory.length < 2){ toast('没有可撤销的操作'); return; }
+  undoHistory.pop();                                   // 丢弃当前状态
+  const prev = undoHistory[undoHistory.length - 1];
+  try{ state = JSON.parse(prev); }catch(e){ toast('撤销失败'); return; }
+  state.applications = (state.applications||[]).map(normalize);
+  persist(); render();
+  toast('已撤销上一步（' + state.applications.length + ' 条）');
+}
+function save(){ persist(); render(); pushHistory(); }
+function addApp(a){
+  if(a && !a.id) a.id = 'c' + Math.random().toString(36).slice(2,9);   // 保证每条记录都有稳定 id
+  state.applications.push(a);
+  return a;
+}
+function delApp(idx){ return state.applications.splice(idx,1)[0]; }
+function setFilter(p){ Object.assign(filter, p); render(); }
+
+/* ---------- 工具 ---------- */
+function esc(s){ return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function today(){ const d=new Date(); return d.toISOString().slice(0,10); }
+function daysBetween(from,to){
+  if(!from) return null;
+  const a=new Date(from+'T00:00:00'), b=new Date((to||today())+'T00:00:00');
+  return Math.round((b-a)/86400000);
+}
+function lastChange(a){
+  const h = a['状态历史']||[];
+  const dates = h.map(x=>x['日期']).filter(Boolean).concat([a['投递日期']].filter(Boolean));
+  return dates.length ? dates.sort().slice(-1)[0] : '';
+}
+function staleDays(a){
+  const base = lastChange(a);
+  if(!base) return null;
+  const _s = effStatus(a); if(_s==='未投递' || TERMINAL.includes(_s)) return null;
+  return daysBetween(base);
+}
+function isOverdue(a){
+  return !!(a['下一步截止'] && a['下一步截止'] < today() && !TERMINAL.includes(effStatus(a)));
+}
+function stars(n){ n = Math.max(1,Math.min(5, +n||3)); return '★'.repeat(n)+'☆'.repeat(5-n); }
+
+/* ---------- 投递链接：一键新标签打开 + 可访问性状态 ---------- */
+function linkState(a){ return String(a['链接状态']||'').trim(); }
+function linkClass(a){
+  const s = linkState(a);
+  if(!s) return 'muted';
+  if(s === '可访问') return 'ok';
+  if(s.indexOf('真问题') === 0) return 'bad';
+  if(s === '无链接') return 'muted';
+  return 'warn';
+}
+function linkBadge(a){
+  const s = linkState(a);
+  if(!s) return '<span class="lstatus muted">未检测</span>';
+  const cls = linkClass(a);
+  const short = s.replace('待确认·', '待确认·').replace('真问题·', '⚠ ');
+  return '<span class="lstatus ' + cls + '" title="' + esc(s + (a['链接检测日期'] ? '（检测于 ' + a['链接检测日期'] + '）' : '')) + '">' + esc(short) + '</span>';
+}
+/* target=_blank + rel=noopener：新标签打开，不覆盖看板；stopPropagation 避免触发卡片/行点击 */
+function linkAnchor(a, label){
+  const url = String(a['投递链接']||'').trim();
+  if(!url) return '<span class="gotolink off">无链接</span>';
+  return '<a class="gotolink" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer"'
+       + ' draggable="false" onclick="event.stopPropagation()" title="' + esc(url) + '">'
+       + esc(label || '投递 ↗') + '</a>';
+}
+function linkIssue(a){
+  const s = linkState(a);
+  return !!s && (s.indexOf('真问题') === 0 || s.indexOf('待确认') === 0);
+}
+function nextStatus(s){
+  const i = PIPELINE.indexOf(s);
+  if(i<0) return null;
+  return i<PIPELINE.length-1 ? PIPELINE[i+1] : null;
+}
+
+/* ---------- 状态流转 ---------- */
+/* 整理历史：
+   ① 同日「净变化为零」（当天最后回到起始状态，即来回拖动）→ 整天记录丢弃；
+   ② 同日相邻回退（A→B 紧跟 B→A）→ 两条抵消；
+   ③ 同日完全重复 → 丢弃。
+   跨天记录不合并（不同天的同向流转是真实进度）。 */
+function compactHistory(a){
+  const src = (a['状态历史']||[]).slice();
+  const days = [];
+  src.forEach(e=>{
+    const d = e['日期']||'';
+    let g = days[days.length-1];
+    if(!g || g.date!==d){ g = {date:d, items:[]}; days.push(g); }
+    g.items.push(e);
+  });
+  const out = [];
+  days.forEach(g=>{
+    const items = g.items;
+    if(items.length>1 && items[0]['从']===items[items.length-1]['到']){
+      return;                                   // ① 当天净变化为零 → 丢弃整天
+    }
+    const keep = [];
+    items.forEach(e=>{
+      const last = keep[keep.length-1];
+      if(last && last['从']===e['到'] && last['到']===e['从']){ keep.pop(); return; }  // ② 回退抵消
+      if(last && last['从']===e['从'] && last['到']===e['到']){ return; }             // ③ 重复
+      keep.push(e);
+    });
+    out.push(...keep);
+  });
+  a['状态历史'] = out;
+  return out;
+}
+function setStatus(a, to, note){
+  if(!to || to===a['投递状态']) return;
+  const from = a['投递状态'];
+  a['状态历史'] = a['状态历史']||[];
+  const h = a['状态历史'];
+  const last = h[h.length-1];
+  // 同日精确回退：上一条正好是 to→from（即刚从 to 拖到 from），两条抵消，不写流水
+  if(last && last['日期']===today() && last['从']===to && last['到']===from){
+    h.pop();
+    a['投递状态'] = to;
+    if(to==='未投递' && !h.length && a['投递日期']===today()) a['投递日期'] = '';
+    return;
+  }
+  h.push({日期: today(), 从: from, 到: to, 备注: note||''});
+  a['投递状态'] = to;
+  if(to==='已投递' && !a['投递日期']) a['投递日期'] = today();
+  compactHistory(a);
+}
+
+/* ---------- 统计 ---------- */
+function applied(a){ return effStatus(a)!=='未投递'; }
+function reached(a, stages){ return stages.includes(effStatus(a)); }
+function renderFunnel(){
+  const total = state.applications.length;
+  const ap = state.applications.filter(applied).length;
+  const ql = state.applications.filter(a=>reached(a,['综合素质评测','笔试','一面','二面','三面','HR面','offer'])).length;
+  const oa = state.applications.filter(a=>reached(a,['笔试','一面','二面','三面','HR面','offer'])).length;
+  const iv = state.applications.filter(a=>reached(a,['一面','二面','三面','HR面','offer'])).length;
+  const of = state.applications.filter(a=>a['投递状态']==='offer').length;
+  const rej = state.applications.filter(a=>TERMINAL.includes(effStatus(a))).length;
+  const stale = state.applications.filter(a=>(staleDays(a)??0) >= STALE_DAYS).length;
+  const pct = (x,y)=> y? Math.round(x/y*100)+'%' : '—';
+  const posTotal = state.applications.reduce((n,a)=>n+((a['岗位列表']||[]).length), 0);
+  const cards = [
+    ['公司', total, posTotal?('在招岗位 '+posTotal):''],
+    ['已投递', ap, '投递率 '+pct(ap,total)],
+    ['进测评', ql, '测评率 '+pct(ql,ap)],
+    ['进笔试', oa, '笔试率 '+pct(oa,ap)],
+    ['进面试', iv, '面试率 '+pct(iv,ap)],
+    ['Offer', of, '转化 '+pct(of,ap)],
+    ['停滞 ≥'+STALE_DAYS+'天', stale, stale?'需跟进':''],
+  ];
+  document.getElementById('funnel').innerHTML = cards.map(([k,v,r])=>
+    `<div class="fcard"><div class="k">${k}</div><div class="v">${v}</div><div class="r">${r||''}</div></div>`).join('');
+}
+
+/* ---------- 筛选/排序 ---------- */
+function filtered(){
+  const q = filter.q.trim().toLowerCase();
+  let list = state.applications.filter(a=>{
+    if(filter.tier && a['梯队']!==filter.tier) return false;
+    if(filter.issue && !linkIssue(a)) return false;
+    const g = GROUP.find(x=>x.key===filter.group);
+    if(g && typeof g.match==='function' && !g.match(effStatus(a))) return false;
+    if(q){
+      const hay = [a['企业'],a['岗位'],a['工作地点'],a['渠道'],a['简历版本'],a['内推'],a['备注']].join(' ').toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+  const T = ['第一梯队-互联网大厂','第二梯队-AI/科技独角兽','第三梯队-传统大厂/制造业','第四梯队-AI创业公司'];
+  const S = s=>{ const i=PIPELINE.indexOf(s); return i<0?99:i; };
+  if(filter.sort==='stale') list.sort((a,b)=>(staleDays(b)??-1)-(staleDays(a)??-1));
+  else if(filter.sort==='applied') list.sort((a,b)=>(b['投递日期']||'').localeCompare(a['投递日期']||''));
+  else if(filter.sort==='priority') list.sort((a,b)=>(+b['优先级']||0)-(+a['优先级']||0));
+  else if(filter.sort==='status') list.sort((a,b)=>S(effStatus(b))-S(effStatus(a)));
+  else list.sort((a,b)=>{ const d=T.indexOf(a['梯队'])-T.indexOf(b['梯队']); return d|| (b['投递日期']||'').localeCompare(a['投递日期']||''); });
+  return list;
+}
+
+/* ---------- 渲染 ---------- */
+function renderTier(){
+  const sel = document.getElementById('tier');
+  const T = ['第一梯队-互联网大厂','第二梯队-AI/科技独角兽','第三梯队-传统大厂/制造业','第四梯队-AI创业公司'];
+  const tiers = [...new Set(state.applications.map(a=>a['梯队']))].sort((a,b)=>T.indexOf(a)-T.indexOf(b));
+  sel.innerHTML = '<option value="">全部梯队</option>' + tiers.map(t=>
+    `<option value="${esc(t)}" ${filter.tier===t?'selected':''}>${esc(t.replace('-',' · '))}</option>`).join('');
+}
+/* 状态筛选 pills 已按需求移除：默认展示全部 */
+function renderPills(){ /* no-op（保留函数避免旧引用报错） */ }
+/* 卡片：公司级 */
+function kcardCo(a, ci){
+  const s = effStatus(a);
+  const n = (a['岗位列表']||[]).length;
+  const st = staleDays(a), od = isOverdue(a);
+  return `<div class="kcard" draggable="true" data-ci="${ci}" data-pi="-1">
+    <div class="t"><span>${esc(a['企业'])}</span><span class="badge ${BADGE[s]}">${esc(s)}</span></div>
+    <div class="p">${esc(a['岗位']||'—')}</div>
+    <div class="m">
+      <span class="star">${stars(a['优先级'])}</span>
+      ${n?`<span class="tag">${n} 个岗位</span>`:''}
+      ${a['投递日期']?`<span>投 ${esc(a['投递日期'])}</span>`:''}
+      ${st!==null&&st>=STALE_DAYS?`<span class="stale">停滞 ${st} 天</span>`:''}
+      ${od?`<span class="overdue">待办逾期</span>`:''}
+    </div>
+    <div class="m">${linkAnchor(a, '投递 ↗')}${linkBadge(a)}</div>
+  </div>`;
+}
+/* 卡片：岗位级（一家公司下的某个在招岗位） */
+function kcardPos(a, ci, pi){
+  const p = (a['岗位列表']||[])[pi] || blankPosition();
+  const s = p['投递状态'];
+  const meta = [p['类型'], p['城市'], p['更新日期'] ? ('更新 ' + p['更新日期']) : ''].filter(Boolean);
+  return `<div class="kcard" draggable="true" data-ci="${ci}" data-pi="${pi}">
+    <div class="t"><span>${esc(p['岗位']||'—')}</span><span class="badge ${BADGE[s]}">${esc(s)}</span></div>
+    <div class="p"><span class="tag">${esc(a['企业'])}</span>${p['在招业务']?` <span class="muted" style="font-size:11px">${esc(String(p['在招业务']).split('/')[0].trim())}…</span>`:''}</div>
+    <div class="m">${meta.map(x=>`<span>${esc(x)}</span>`).join('')}</div>
+    <div class="m">${linkAnchor(a, '投递 ↗')}</div>
+  </div>`;
+}
+/* 分组卡：同一家公司的多个岗位合并成一张卡，卡内一行一个岗位（各自改状态） */
+function kcardGroup(a, ci){
+  const list = a['岗位列表']||[];
+  const s = effStatus(a);
+  const rows = list.map((p,pi)=>{
+    const opts = STATUS_ALL.map(x=>`<option ${p['投递状态']===x?'selected':''}>${x}</option>`).join('');
+    const meta = [p['类型'], p['城市'], p['更新日期'] ? ('更新 ' + p['更新日期']) : ''].filter(Boolean);
+    return `<div class="prow">
+      <div class="prow-t"><b>${esc(p['岗位']||'—')}</b><span class="badge ${BADGE[p['投递状态']]}">${esc(p['投递状态'])}</span></div>
+      ${meta.length?`<div class="prow-m">${meta.map(esc).join(' · ')}</div>`:''}
+      <div class="prow-a">
+        <select data-posstatus="1" data-ci="${ci}" data-pi="${pi}">${opts}</select>
+        <button class="mini" data-posadv="1" data-ci="${ci}" data-pi="${pi}">推进</button>
+        <button class="mini" data-posedit="1" data-ci="${ci}" data-pi="${pi}">编辑</button>
+      </div>
+    </div>`;
+  }).join('');
+  return `<div class="kcard grouped" draggable="false" data-ci="${ci}" data-pi="-1">
+    <div class="t"><span>${esc(a['企业'])}</span><span class="badge ${BADGE[s]}">${esc(s)}</span></div>
+    <div class="m"><span class="tag">${list.length} 个岗位</span><span class="star">${stars(a['优先级'])}</span></div>
+    <div class="prows">${rows}</div>
+    <div class="m">${linkAnchor(a, '投递 ↗')}${linkBadge(a)}</div>
+  </div>`;
+}
+function renderBoard(){
+  const list = filtered();
+  const el = document.getElementById('boardView');
+  el.innerHTML = BOARD.map(col=>{
+    const cards = [];
+    if(unit === 'position'){
+      // 按岗位：同一家公司的岗位合并成一张分组卡，按公司最靠前进度落列
+      list.forEach(a=>{
+        const ci = state.applications.indexOf(a);
+        const hasPos = (a['岗位列表']||[]).length > 0;
+        if(col.match(effStatus(a))) cards.push(hasPos ? kcardGroup(a, ci) : kcardCo(a, ci));
+      });
+    }else{
+      list.forEach(a=>{
+        if(col.match(effStatus(a))) cards.push(kcardCo(a, state.applications.indexOf(a)));
+      });
+    }
+    return `<div class="col" data-col="${col.key}">
+      <div class="col-h"><span>${col.label}</span><span class="n">${cards.length}</span></div>
+      ${cards.join('')}
+      <div class="drop-hint">整列都是投放区<br>拖到这里 = 设为「${col.label}」</div>
+    </div>`;
+  }).join('');
+}
+/* 列表行：公司级 / 岗位级 */
+function rowCo(a, ci){
+  const s = effStatus(a);
+  const n = (a['岗位列表']||[]).length;
+  const st = staleDays(a), od = isOverdue(a);
+  return `<tr data-ci="${ci}" data-pi="-1">
+    <td><b>${esc(a['企业'])}</b><div class="muted" style="font-size:11.5px">${esc(a['岗位']||'')}${n?` · ${n} 个岗位`:''}</div></td>
+    <td><span class="tag">${esc(a['梯队'].replace('-',' · '))}</span></td>
+    <td><span class="badge ${BADGE[s]}">${esc(s)}</span></td>
+    <td>${esc(a['投递日期']||'—')}</td>
+    <td>${esc(a['简历版本']||'—')}</td>
+    <td>${esc(a['渠道']||'—')}</td>
+    <td>${linkAnchor(a)}</td>
+    <td>${linkBadge(a)}</td>
+    <td>${st!==null&&st>=STALE_DAYS?`<span class="stale">${st} 天</span>`:(st!==null?st+' 天':'—')}</td>
+    <td>${a['下一步']?esc(a['下一步']):'—'}${od?' <span class="overdue">逾期</span>':''}</td>
+    <td class="star">${stars(a['优先级'])}</td>
+    <td><div class="row-actions">
+      <button class="mini" data-act="adv" data-ci="${ci}" data-pi="-1">推进</button>
+      <button class="mini" data-act="edit" data-ci="${ci}" data-pi="-1">编辑</button>
+    </div></td>
+  </tr>`;
+}
+function rowPos(a, ci, pi){
+  const p = (a['岗位列表']||[])[pi] || blankPosition();
+  const s = p['投递状态'];
+  return `<tr data-ci="${ci}" data-pi="${pi}">
+    <td><b>${esc(a['企业'])}</b><div class="muted" style="font-size:11.5px">${esc(p['类型']||'')}${p['更新日期']?' · 更新 '+esc(p['更新日期']):''}</div></td>
+    <td><span class="tag">${esc(p['岗位']||'—')}</span></td>
+    <td><span class="badge ${BADGE[s]}">${esc(s)}</span></td>
+    <td>${esc(p['投递日期']||'—')}</td>
+    <td>${esc(p['简历版本']||'—')}</td>
+    <td>${esc(a['渠道']||'—')}</td>
+    <td>${linkAnchor(a)}</td>
+    <td>${esc(p['城市']||'—')}</td>
+    <td>—</td>
+    <td>${esc(p['在招业务']?String(p['在招业务']).split('/')[0].trim():'—')}</td>
+    <td class="star">${stars(a['优先级'])}</td>
+    <td><div class="row-actions">
+      <button class="mini" data-act="adv" data-ci="${ci}" data-pi="${pi}">推进</button>
+      <button class="mini" data-act="edit" data-ci="${ci}" data-pi="${pi}">编辑</button>
+    </div></td>
+  </tr>`;
+}
+function renderList(){
+  const list = filtered();
+  const el = document.getElementById('listView');
+  const rows = [];
+  if(unit === 'position'){
+    list.forEach(a=>{
+      const ci = state.applications.indexOf(a);
+      (a['岗位列表']||[]).forEach((p,pi)=>rows.push(rowPos(a, ci, pi)));
+    });
+  }else{
+    list.forEach(a=>rows.push(rowCo(a, state.applications.indexOf(a))));
+  }
+  if(!rows.length){ el.innerHTML = '<div class="empty">没有匹配的记录</div>'; return; }
+  el.innerHTML = `<table><thead><tr>
+    <th>企业</th><th>${unit==='position'?'岗位':'岗位 / 梯队'}</th><th>状态</th><th>投递日期</th><th>简历版本</th><th>渠道</th>
+    <th>投递入口</th><th>${unit==='position'?'城市':'链接状态'}</th><th>${unit==='position'?'—':'停滞'}</th><th>${unit==='position'?'在招业务':'下一步'}</th><th>优先级</th><th></th></tr></thead><tbody>
+    ${rows.join('')}
+  </tbody></table>`;
+}
+function renderDatalists(){
+  const c = document.getElementById('dlCompany');
+  if(c) c.innerHTML = LIBRARY.map(x=>`<option>${esc(x['企业'])}</option>`).join('');
+}
+function render(){
+  renderFunnel(); renderTier(); renderPills(); renderDatalists(); renderFileStatus();
+  const list = filtered();
+  document.getElementById('count').textContent = `共 ${list.length} 家`;
+  document.getElementById('boardView').style.display = view==='board'?'grid':'none';
+  document.getElementById('listView').style.display = view==='list'?'block':'none';
+  if(view==='board') renderBoard(); else renderList();
+}
+
+/* ---------- 弹窗（增删改） ---------- */
+/* 岗位块（弹窗内一行一个岗位，可增删改） */
+function posBlock(p, i){
+  const opts = STATUS_ALL.map(s=>`<option ${p['投递状态']===s?'selected':''}>${s}</option>`).join('');
+  return `<div class="pos" data-pos="1">
+    <div class="grid" style="gap:8px">
+      <div class="field wide"><label>岗位名</label><input data-pk="岗位" value="${esc(p['岗位'])}" placeholder="如：AI应用算法工程师"></div>
+      <div class="field"><label>类型</label><input data-pk="类型" value="${esc(p['类型'])}" placeholder="技术类"></div>
+      <div class="field"><label>城市</label><input data-pk="城市" value="${esc(p['城市'])}" placeholder="北京 / 杭州"></div>
+      <div class="field"><label>更新日期</label><input data-pk="更新日期" value="${esc(p['更新日期'])}" placeholder="2026-09-03"></div>
+      <div class="field"><label>投递状态</label><select data-pk="投递状态">${opts}</select></div>
+      <div class="field"><label>投递日期</label><input data-pk="投递日期" type="date" value="${esc(p['投递日期'])}"></div>
+      <div class="field"><label>简历版本</label><input data-pk="简历版本" list="dlResume" value="${esc(p['简历版本'])}"></div>
+      <div class="field wide"><label>在招业务</label><input data-pk="在招业务" value="${esc(p['在招业务'])}" placeholder="示例事业群 / 示例实验室 / …"></div>
+      <div class="field wide"><label>备注</label><input data-pk="备注" value="${esc(p['备注'])}"></div>
+    </div>
+    <div class="pos-foot">
+      <span class="muted" style="font-size:11.5px">${(p['状态历史']||[]).length?('历史 '+(p['状态历史']||[]).length+' 条'):''}</span>
+      <button class="mini" type="button" data-delpos="1">删除岗位</button>
+    </div>
+  </div>`;
+}
+function openEditor(idx, pi){
+  editing = idx;
+  const isNew = idx === -1;
+  const a = isNew ? blank() : state.applications[idx];
+  const focusPi = (typeof pi === 'number' && pi >= 0) ? pi : -1;
+  // 默认值：投递日期默认今天（未投递的旧记录不补）；渠道一律默认官网
+  const defDate = a['投递日期'] || ((isNew || a['投递状态']!=='未投递') ? today() : '');
+  const defChannel = a['渠道'] || '官网';
+  document.getElementById('modalTitle').textContent = isNew ? '新增企业' : a['企业'];
+  document.getElementById('modalSub').textContent = isNew
+    ? '输入企业名会自动补齐岗位/地点/链接；日期与渠道已填默认值，可直接保存'
+    : (a['岗位']||'');
+  document.getElementById('delBtn').style.display = isNew ? 'none' : '';
+  document.getElementById('advBtn').style.display = isNew ? 'none' : '';
+  document.getElementById('flow').innerHTML = flowHTML(a['投递状态'], isNew);
+  const opt = STATUS_ALL.map(s=>`<option ${a['投递状态']===s?'selected':''}>${s}</option>`).join('');
+  const tiers = ['第一梯队-互联网大厂','第二梯队-AI/科技独角兽','第三梯队-传统大厂/制造业','第四梯队-AI创业公司'];
+  const positions = a['岗位列表']||[];
+  document.getElementById('modalBody').innerHTML = `
+    <div class="field"><label>企业 *</label><input data-k="企业" list="dlCompany" value="${esc(a['企业'])}" placeholder="输入后自动补齐"></div>
+    <div class="field"><label>梯队</label><select data-k="梯队">${tiers.map(t=>`<option ${a['梯队']===t?'selected':''}>${t}</option>`).join('')}</select></div>
+    <div class="field wide"><label>岗位概述</label><input data-k="岗位" value="${esc(a['岗位'])}" placeholder="可留空，保存时会用岗位列表自动生成"></div>
+    <div class="field"><label>投递状态</label><select data-k="投递状态">${opt}</select></div>
+    <div class="field"><label>投递日期</label><input data-k="投递日期" type="date" value="${esc(defDate)}"></div>
+    <div class="field"><label>简历版本</label><input data-k="简历版本" list="dlResume" value="${esc(a['简历版本'])}" placeholder="v1 通用版 / v2 Agent强化版"></div>
+    <div class="field"><label>渠道</label><input data-k="渠道" list="dlChannel" value="${esc(defChannel)}" placeholder="官网 / 牛客 / BOSS / 内推"></div>
+    <div class="field"><label>内推 / 联系人</label><input data-k="内推" value="${esc(a['内推'])}"></div>
+    <div class="field"><label>工作地点</label><input data-k="工作地点" value="${esc(a['工作地点'])}"></div>
+    <div class="field"><label>优先级（1-5）</label><input data-k="优先级" type="number" min="1" max="5" value="${esc(a['优先级'])}"></div>
+    <div class="field"><label>下一步</label><input data-k="下一步" value="${esc(a['下一步'])}" placeholder="如：完成笔试"></div>
+    <div class="field"><label>下一步截止</label><input data-k="下一步截止" type="date" value="${esc(a['下一步截止'])}"></div>
+    <div class="field wide"><label>投递链接 ${isNew?'':linkBadge(a)}</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input data-k="投递链接" value="${esc(a['投递链接'])}">
+        ${linkAnchor(a, '打开 ↗')}
+      </div>
+    </div>
+    <div class="field wide">
+      <label>在招岗位 <span class="muted" style="font-weight:400">（一家公司可挂多个岗位，各自独立跟踪进度）</span></label>
+      <div id="posList">${positions.map((p,i)=>posBlock(p,i)).join('')}</div>
+      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+        <button class="btn" id="posAdd" type="button">+ 加一个岗位</button>
+        <button class="btn" id="posPasteToggle" type="button">批量粘贴岗位</button>
+      </div>
+      <div id="posPasteBox" style="display:none;margin-top:8px">
+        <textarea id="posPasteText" style="min-height:110px" placeholder="从招聘页整段复制粘贴，例如：&#10;AI应用算法工程师&#10;更新于 2026-09-03&#10;技术类&#10;北京 / 广州 / 杭州 / 上海&#10;在招业务&#10;示例事业群 A / 示例事业群 B&#10;Agent Infra工程师&#10;更新于 2026-09-03&#10;…"></textarea>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap">
+          <button class="btn primary" id="posParse" type="button">解析并添加</button>
+          <span class="muted" style="font-size:12px">支持多岗位连续粘贴，解析后可手工修正</span>
+        </div>
+      </div>
+    </div>
+    <div class="field wide"><label>备注</label><textarea data-k="备注">${esc(a['备注'])}</textarea></div>
+    <div class="field wide interviews">
+      <label>面试记录（公司级）</label>
+      <div id="ivList">${(a['面试记录']||[]).map((r,i)=>ivRow(r,i)).join('')}</div>
+      <button class="btn" id="ivAdd" type="button">+ 加一条</button>
+    </div>`;
+  document.getElementById('histBox').innerHTML = histHTML(a);
+  document.getElementById('modalBg').classList.add('show');
+  if(focusPi >= 0){
+    const el = document.querySelectorAll('#posList .pos')[focusPi];
+    if(el){ el.classList.add('focus'); el.scrollIntoView({block:'center'}); }
+  }
+}
+function flowHTML(cur, isNew){
+  if(isNew) return '';
+  const done = PIPELINE.indexOf(cur);
+  const steps = PIPELINE.map((s,i)=>{
+    const cls = cur===s ? 'now' : (done>=0 && i<done ? 'done' : '');
+    return `<span class="step ${cls}">${s}</span>`;
+  }).join('<span class="muted">›</span>');
+  const term = TERMINAL.includes(cur) ? `<span class="step now">${esc(cur)}</span>` : '';
+  return steps + (term?'<span class="muted">｜</span>'+term:'');
+}
+function histHTML(a){
+  const h = (a['状态历史']||[]).slice().reverse();
+  if(!h.length) return '<div class="muted" style="font-size:12px">暂无状态变更记录（推进状态后自动记录）</div>';
+  return `<div style="font-size:12.5px;font-weight:600;margin-bottom:6px">状态历史</div>
+   <table><thead><tr><th>日期</th><th>变更</th><th>备注</th></tr></thead><tbody>
+   ${h.map(x=>`<tr><td>${esc(x['日期']||'')}</td><td>${esc(x['从']||'—')} → <b>${esc(x['到']||'')}</b></td><td>${esc(x['备注']||'')}</td></tr>`).join('')}
+   </tbody></table>`;
+}
+function ivRow(r,i){
+  return `<div class="iv" data-i="${i}">
+    <input data-ik="日期" type="date" value="${esc(r['日期']||'')}">
+    <input data-ik="轮次" placeholder="轮次" value="${esc(r['轮次']||'')}">
+    <input data-ik="结果" placeholder="结果" value="${esc(r['结果']||'')}">
+    <input data-ik="备注" placeholder="备注" value="${esc(r['备注']||'')}">
+    <button class="del" type="button" data-deliv="1">✕</button>
+  </div>`;
+}
+function collectEditor(){
+  const a = editing===-1 ? blank() : state.applications[editing];
+  document.querySelectorAll('#modalBody [data-k]').forEach(el=>{
+    const k = el.dataset.k;
+    a[k] = (k==='优先级') ? Math.max(1,Math.min(5, parseInt(el.value)||3)) : el.value;
+  });
+  const ivs = [];
+  document.querySelectorAll('#modalBody .iv').forEach(iv=>{
+    const o={}; iv.querySelectorAll('input').forEach(inp=>{ o[inp.dataset.ik]=inp.value; });
+    ivs.push(o);
+  });
+  a['面试记录'] = ivs;
+  /* 在招岗位：按 DOM 顺序收集（保留各自状态历史） */
+  const old = a['岗位列表']||[];
+  const positions = [];
+  document.querySelectorAll('#posList .pos').forEach((el,i)=>{
+    const p = normalizePos({ 状态历史: (old[i] && old[i]['状态历史']) ? old[i]['状态历史'].slice() : [] });
+    el.querySelectorAll('[data-pk]').forEach(inp=>{ p[inp.dataset.pk] = inp.value; });
+    if(String(p['岗位']||'').trim()) positions.push(p);     // 岗位名为空的不入库
+  });
+  a['岗位列表'] = positions;
+  return a;
+}
+function saveEditor(){
+  const before = editing===-1 ? null : state.applications[editing];
+  const a = collectEditor();
+  if(!a['企业']){ alert('企业名称不能为空'); return; }
+  // 有岗位列表时：公司级状态/日期由岗位聚合；岗位概述为空则自动生成
+  if((a['岗位列表']||[]).length){
+    if(!String(a['岗位']||'').trim()){
+      a['岗位'] = a['岗位列表'].map(p=>p['岗位']).join(' / ');
+    }
+    syncCompanyFromPositions(a);
+  }
+  if(editing===-1){
+    if(!a.id) a.id = 'c'+Math.random().toString(36).slice(2,9);
+    addApp(a);
+  }else{
+    // 手改状态下拉也算一次流转，自动记历史
+    const oldStatus = before['投递状态'];
+    if(oldStatus !== a['投递状态']){
+      a['状态历史'] = a['状态历史']||[];
+      a['状态历史'].push({日期:today(), 从:oldStatus, 到:a['投递状态'], 备注:'手动修改'});
+    }
+    if(a['投递状态']==='已投递' && !a['投递日期']) a['投递日期']=today();
+  }
+  document.getElementById('modalBg').classList.remove('show');
+  save();
+}
+function deleteCurrent(){
+  if(editing<0) return;
+  const a = state.applications[editing];
+  if(!confirm(`确定删除「${a['企业']}」？可撤销。`)) return;
+  const backup = JSON.parse(JSON.stringify(a));
+  delApp(editing);
+  document.getElementById('modalBg').classList.remove('show');
+  save();
+  toast(`已删除 ${backup['企业']}`, ()=>{ addApp(backup); save(); });
+}
+
+/* ---------- toast ---------- */
+let toastTimer=null;
+function toast(msg, undo){
+  const el = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  const btn = document.getElementById('toastUndo');
+  btn.style.display = undo ? '' : 'none';
+  btn.onclick = ()=>{ if(undo) undo(); el.classList.remove('show'); };
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>el.classList.remove('show'), 6000);
+}
+
+/* ---------- 导出/导入 ---------- */
+function download(name, text, type){
+  const blob = new Blob([text], {type: type||'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name; a.click();
+  URL.revokeObjectURL(a.href);
+}
+function exportJSON(){ download('投递台账.json', JSON.stringify(state,null,2)); }
+
+/* ---------- 事件绑定（放在 render 之后） ---------- */
+render();
+
+document.getElementById('viewSeg').addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  view = b.dataset.v;
+  document.querySelectorAll('#viewSeg button').forEach(x=>x.classList.toggle('active', x===b));
+  render();
+});
+document.getElementById('unitSeg').addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  unit = b.dataset.u;
+  document.querySelectorAll('#unitSeg button').forEach(x=>x.classList.toggle('active', x===b));
+  render();
+});
+document.getElementById('q').addEventListener('input', e=>{ filter.q=e.target.value; render(); });
+document.getElementById('tier').addEventListener('change', e=>{ filter.tier=e.target.value; render(); });
+document.getElementById('sort').addEventListener('change', e=>{ filter.sort=e.target.value; render(); });
+document.getElementById('onlyIssue').addEventListener('change', e=>{ filter.issue=e.target.checked; render(); });
+
+/* 看板拖拽 */
+document.getElementById('boardView').addEventListener('dragstart', e=>{
+  const c = e.target.closest('.kcard'); if(!c) return;
+  dragCi = +c.dataset.ci; dragPi = +c.dataset.pi; dragFrom = dragCi;
+  c.classList.add('dragging');
+  e.dataTransfer.effectAllowed='move';
+  try{ e.dataTransfer.setData('text/plain', c.dataset.ci + ':' + c.dataset.pi); }catch(err){}
+});
+document.getElementById('boardView').addEventListener('dragend', e=>{
+  document.querySelectorAll('.kcard.dragging').forEach(x=>x.classList.remove('dragging'));
+  document.querySelectorAll('.col.over').forEach(x=>x.classList.remove('over'));
+});
+document.getElementById('boardView').addEventListener('dragover', e=>{
+  const col = e.target.closest('.col'); if(!col) return;
+  e.preventDefault();
+  document.querySelectorAll('.col.over').forEach(x=>x.classList.remove('over'));
+  col.classList.add('over');
+});
+document.getElementById('boardView').addEventListener('drop', e=>{
+  const col = e.target.closest('.col');
+  if(!col || dragCi===null) return;
+  e.preventDefault();
+  const b = BOARD.find(x=>x.key===col.dataset.col);
+  const a = state.applications[dragCi];
+  if(a && b){
+    let to = b.status;
+    const isIv = s => ['一面','二面','三面','HR面'].includes(s);
+    if(dragPi >= 0){
+      const p = (a['岗位列表']||[])[dragPi];
+      if(p){
+        if(b.key==='interview' && isIv(p['投递状态'])) to = p['投递状态'];
+        setStatus(p, to, '看板拖拽');
+        syncCompanyFromPositions(a);
+        save();
+        toast(`${a['企业']} · ${p['岗位']} → ${to}`);
+      }
+    }else{
+      if(b.key==='interview' && isIv(a['投递状态'])) to = a['投递状态'];
+      setStatus(a, to, '看板拖拽');
+      save();
+      toast(`${a['企业']} → ${to}`);
+    }
+  }
+  dragCi = null; dragPi = null; dragFrom = null;
+});
+/* 拖到视口边缘时自动滚动，避免目标列在视野外够不到 */
+document.addEventListener('dragover', e=>{
+  if(dragCi===null) return;
+  const EDGE = 90, SPEED = 14;
+  const y = e.clientY, h = window.innerHeight;
+  if(y > h - EDGE) window.scrollBy(0, SPEED);
+  else if(y < EDGE) window.scrollBy(0, -SPEED);
+});
+/* 点击卡片/行 */
+/* 分组卡内：岗位状态下拉直接改该岗位状态 */
+document.getElementById('boardView').addEventListener('change', e=>{
+  const sel = e.target.closest('select[data-posstatus]'); if(!sel) return;
+  const ci = +sel.dataset.ci, pi = +sel.dataset.pi;
+  const a = state.applications[ci]; const p = (a['岗位列表']||[])[pi];
+  if(!p || p['投递状态'] === sel.value) return;
+  const old = p['投递状态'];
+  p['状态历史'] = p['状态历史']||[];
+  p['状态历史'].push({日期: today(), 从: old, 到: sel.value, 备注: '分组卡修改'});
+  p['投递状态'] = sel.value;
+  if(sel.value==='已投递' && !p['投递日期']) p['投递日期'] = today();
+  compactHistory(p);
+  syncCompanyFromPositions(a);
+  save();
+  toast(`${a['企业']} · ${p['岗位']} → ${sel.value}`);
+});
+document.getElementById('boardView').addEventListener('click', e=>{
+  const adv = e.target.closest('button[data-posadv]');
+  if(adv){
+    e.stopPropagation();
+    const ci = +adv.dataset.ci, pi = +adv.dataset.pi;
+    const a = state.applications[ci]; const p = (a['岗位列表']||[])[pi];
+    if(!p) return;
+    const nx = nextStatus(p['投递状态']);
+    if(!nx){ toast('已是终态'); return; }
+    setStatus(p, nx, '分组卡推进');
+    syncCompanyFromPositions(a);
+    save();
+    toast(`${a['企业']} · ${p['岗位']} → ${nx}`);
+    return;
+  }
+  const ed = e.target.closest('button[data-posedit]');
+  if(ed){ e.stopPropagation(); openEditor(+ed.dataset.ci, +ed.dataset.pi); return; }
+  const c = e.target.closest('.kcard'); if(!c) return;
+  openEditor(+c.dataset.ci, +c.dataset.pi);
+});
+document.getElementById('listView').addEventListener('click', e=>{
+  const btn = e.target.closest('button[data-act]');
+  if(btn){
+    const ci = +btn.dataset.ci, pi = +btn.dataset.pi, a = state.applications[ci];
+    if(btn.dataset.act==='edit'){ openEditor(ci, pi); return; }
+    if(btn.dataset.act==='adv'){
+      const target = pi >= 0 ? (a['岗位列表']||[])[pi] : a;
+      if(!target) return;
+      const nx = nextStatus(target['投递状态']);
+      if(!nx){ toast('已是终态'); return; }
+      setStatus(target, nx, '列表推进');
+      if(pi >= 0) syncCompanyFromPositions(a);
+      save(); toast(`${a['企业']}${pi>=0?' · '+target['岗位']:''} → ${nx}`); return;
+    }
+  }
+  const tr = e.target.closest('tr[data-ci]'); if(!tr) return;
+  openEditor(+tr.dataset.ci, +tr.dataset.pi);
+});
+
+/* 弹窗 */
+document.getElementById('modalSave').addEventListener('click', saveEditor);
+document.getElementById('modalCancel').addEventListener('click', ()=> document.getElementById('modalBg').classList.remove('show'));
+document.getElementById('modalBg').addEventListener('click', e=>{ if(e.target.id==='modalBg') document.getElementById('modalBg').classList.remove('show'); });
+document.getElementById('delBtn').addEventListener('click', deleteCurrent);
+document.getElementById('advBtn').addEventListener('click', ()=>{
+  const a = state.applications[editing];
+  const nx = nextStatus(a['投递状态']);
+  if(!nx){ toast('已是终态（'+a['投递状态']+'）'); return; }
+  collectEditor();               // 先收下当前表单改动
+  setStatus(a, nx, '弹窗推进');
+  save();
+  openEditor(editing);           // 重开以刷新流程条/历史
+  toast(`${a['企业']} → ${nx}`);
+});
+/* 企业名填完（失焦）后，自动补齐 岗位/地点/链接/梯队（只补空字段，不覆盖已填） */
+document.getElementById('modalBody').addEventListener('focusout', e=>{
+  const el = e.target;
+  if(el && el.dataset && el.dataset.k==='企业') applyLibrary(el.value);
+});
+
+document.getElementById('modalBody').addEventListener('click', e=>{
+  if(e.target.id==='ivAdd'){
+    const a = editing===-1 ? blank() : state.applications[editing];
+    a['面试记录'] = a['面试记录']||[];
+    a['面试记录'].push({日期:'',轮次:'',结果:'',备注:''});
+    document.getElementById('ivList').innerHTML = a['面试记录'].map((r,i)=>ivRow(r,i)).join('');
+    return;
+  }
+  const del = e.target.closest('button[data-deliv]');
+  if(del){
+    const iv = del.closest('.iv'); const i = +iv.dataset.i;
+    const a = editing===-1 ? null : state.applications[editing];
+    if(a){ a['面试记录'].splice(i,1); iv.remove(); }
+    return;
+  }
+  /* 在招岗位：加一个 / 删一个 / 批量粘贴 */
+  if(e.target.id==='posAdd'){
+    const box = document.getElementById('posList');
+    box.insertAdjacentHTML('beforeend', posBlock(blankPosition(), box.children.length));
+    const last = box.lastElementChild;
+    last.querySelector('input[data-pk="岗位"]').focus();
+    last.scrollIntoView({block:'center'});
+    return;
+  }
+  if(e.target.id==='posPasteToggle'){
+    const b = document.getElementById('posPasteBox');
+    b.style.display = b.style.display==='none' ? 'block' : 'none';
+    if(b.style.display==='block') document.getElementById('posPasteText').focus();
+    return;
+  }
+  if(e.target.id==='posParse'){
+    const txt = document.getElementById('posPasteText').value;
+    const parsed = parsePositions(txt);
+    if(!parsed.length){ toast('没解析出岗位，请检查粘贴内容'); return; }
+    const box = document.getElementById('posList');
+    parsed.forEach(p=>box.insertAdjacentHTML('beforeend', posBlock(p, box.children.length)));
+    document.getElementById('posPasteText').value = '';
+    document.getElementById('posPasteBox').style.display = 'none';
+    toast('已解析并添加 ' + parsed.length + ' 个岗位（保存后生效）');
+    return;
+  }
+  const delPos = e.target.closest('button[data-delpos]');
+  if(delPos){ delPos.closest('.pos').remove(); return; }
+});
+
+document.getElementById('addBtn').addEventListener('click', ()=> openEditor(-1));
+document.getElementById('exportBtn').addEventListener('click', exportJSON);
+
+/* 导入：用文件内容替换当前台账（先自动备份，可用「撤销」回退） */
+function doImport(text){
+  let d;
+  try{ d = JSON.parse(text); }catch(e){ alert('解析失败：' + e.message); return; }
+  if(!d || !Array.isArray(d.applications)){ alert('格式不对：需要含 applications 数组的 投递台账.json'); return; }
+  if(!confirm('导入会用文件内容替换当前台账（' + state.applications.length + ' 条 → ' + d.applications.length + ' 条）。\n当前状态会自动备份，可用「撤销」回退。继续？')) return;
+  snapshot('导入前');
+  state = d;
+  state.applications = state.applications.map(normalize);
+  save();
+  toast('已导入 ' + state.applications.length + ' 条（可用「撤销」回退）');
+}
+document.getElementById('importBtn').addEventListener('click', ()=> document.getElementById('importFile').click());
+document.getElementById('importFile').addEventListener('change', e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const rd = new FileReader();
+  rd.onload = ()=> doImport(String(rd.result||''));
+  rd.readAsText(f); e.target.value='';
+});
+
+/* 撤销：回到上一步（内存里保留最近 40 个状态） */
+document.getElementById('undoBtn').addEventListener('click', undo);
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  if(!confirm('重置为初始 50 家数据？当前数据会自动备份，可用「撤销」回退。')) return;
+  snapshot('重置前');
+  localStorage.removeItem(STORAGE_KEY);
+  state = load(); save(); toast('已重置（可用「撤销」回退）');
+});
+
+/* 绑定本地文件 → 之后每次改动自动写入（file:// 直开时的备选方案） */
+document.getElementById('bindFileBtn').addEventListener('click', bindFile);
+restoreFileHandle();
+/* 若由 serve_dashboard.py 提供页面 → 自动启用「服务器自动保存」 */
+detectServer().then(()=>{
+  if(serverMode){
+    render();
+    toast('已连接本地服务：改动会自动写入 投递台账.json');
+  }
+  if(pendingPush){
+    pendingPush = false;
+    scheduleFileWrite();
+    toast('本地数据比文件新，正在写回文件…');
+  }
+  render();
+});
+
+/* 供测试/控制台调用 */
+pushHistory();                                  // 记录初始状态，使第一次操作也能撤销
+window.__app = { get state(){return state;}, get view(){return view;}, setView(v){ view=v; render(); },
+  get unit(){return unit;}, setUnit(u){ unit=u; render(); },
+  setStatus, save, render, openEditor, blank, nextStatus, staleDays, filtered,
+  addApp, delApp, setFilter, compactHistory, lookupCompany, undo, pushHistory,
+  linkIssue, linkBadge, linkAnchor, linkClass,
+  blankPosition, parsePositions, aggStatus, aggAppliedDate, effStatus, syncCompanyFromPositions, posBlock,
+  kcardGroup,
+  snapshot, listBackups, restoreBackup, doImport,
+  fsSupported, bindFile, writeToFile, scheduleFileWrite, renderFileStatus,
+  detectServer, pushToServer, flushSync, diffSince, putRecord, deleteRecord, postFull,
+  get serverMode(){ return serverMode; } };
+</script>
+</body>
+</html>

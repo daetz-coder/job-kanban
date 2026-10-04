@@ -1,0 +1,16 @@
+# 本地数据（个人隐私，不入库）
+data/ledger.json
+data/*.tmp
+data/.backup/
+*.local.json
+
+# 运行时
+__pycache__/
+*.pyc
+node_modules/
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
