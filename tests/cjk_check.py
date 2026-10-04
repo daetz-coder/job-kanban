@@ -101,24 +101,39 @@ def main():
             sys.exit('server did not start')
 
         # 覆盖所有视图：看板 / 列表 / 按岗位 / 首次访问引导
-        # 每个视图附带一个「必须出现」的标志，防止视图没渲染导致的假通过
-        views = [
-            ('board',    url,                'class="col"'),
-            ('list',     url + '#list',      '<table>'),
-            ('position', url + '#pos',       'kcard grouped'),
-            ('onboard',  url + '#onboard',   'class="onb show"'),   # 必须真的可见
-        ]
-        seen, uniq, missing = set(), [], []
-        for name, u, marker in views:
-            dom = subprocess.run(
+        def dump(u):
+            return subprocess.run(
                 [browser, '--headless=new', '--disable-gpu', '--no-first-run',
                  '--virtual-time-budget=4000', '--dump-dom', u],
                 capture_output=True, timeout=120).stdout.decode('utf-8', 'replace')
+
+        def visible(dom):
+            body = re.sub(r'<script[\s\S]*?</script>', '', dom)
+            return re.sub(r'<style[\s\S]*?</style>', '', body)
+
+        # 先确认「默认界面是中文」（#en 之外不带任何语言标记）
+        d0 = visible(dump(url))
+        default_cjk = [m.group(1).strip() for m in re.finditer(r'>([^<>]+)<', d0)
+                       if m.group(1).strip() and CJK.search(m.group(1))]
+        if not default_cjk:
+            print('FAIL: the default UI should be Chinese, but no Chinese text was found')
+            return 1
+        print('OK: default UI is Chinese (e.g. %s)' % default_cjk[0][:24])
+
+        # 再用 #en 强制英文，逐个视图检查不得出现中文
+        views = [
+            ('board',    url + '#en',           'class="col"'),
+            ('list',     url + '#en,list',      '<table>'),
+            ('position', url + '#en,pos',       'kcard grouped'),
+            ('onboard',  url + '#en,onboard',   'class="onb show"'),   # 必须真的可见
+        ]
+        seen, uniq, missing = set(), [], []
+        for name, u, marker in views:
+            dom = dump(u)
             if args.dump:
                 io.open(args.dump.replace('.html', '-%s.html' % name), 'w', encoding='utf-8').write(dom)
 
-            body = re.sub(r'<script[\s\S]*?</script>', '', dom)
-            body = re.sub(r'<style[\s\S]*?</style>', '', body)
+            body = visible(dom)
 
             if marker not in body:
                 missing.append('%s (expected marker: %s)' % (name, marker))
@@ -143,7 +158,7 @@ def main():
                 print('  [MISSING] ' + m)
             return 1
 
-        print('Rendered English UI (%d views) — CJK occurrences: %d' % (len(views), len(dedup)))
+        print('Rendered English UI (%d views, forced with #en) — CJK occurrences: %d' % (len(views), len(dedup)))
         for h in dedup:
             print('  [CJK] ' + h)
         if dedup:

@@ -50,11 +50,19 @@ CANDIDATES = [
     '/usr/bin/microsoft-edge',
 ]
 
-SHOTS = [
-    ('screenshot-board.png', '', 1600, 1000),
-    ('screenshot-list.png', '#list', 1600, 1000),
-    ('screenshot-positions.png', '#pos', 1600, 1000),
+# 每个视图 × 两种界面语言（默认中文；英文版用于英文 README）
+VIEWS = [
+    ('screenshot-board', '', 1600, 1000),
+    ('screenshot-list', 'list', 1600, 1000),
+    ('screenshot-positions', 'pos', 1600, 1000),
 ]
+LANGS = [('', 'en'), ('.zh', 'zh')]
+
+SHOTS = []
+for _suffix, _lang in LANGS:
+    for _name, _flag, _w, _h in VIEWS:
+        _hash = '#' + _lang + ((',' + _flag) if _flag else '')
+        SHOTS.append(('%s%s.png' % (_name, _suffix), _hash, _w, _h))
 
 
 def find_browser():

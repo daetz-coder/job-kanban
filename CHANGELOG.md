@@ -2,6 +2,21 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/).
 
+## [1.2.1] - 2026-10-04
+
+### Changed
+
+- **The UI now defaults to Chinese** (the tool is built for the Chinese campus-recruitment season); the top-left button switches to English and the choice is remembered. Append `#en` (or `#zh`) to any URL to force a language for that load — useful for sharing and for the English screenshots in this README.
+- README screenshots now come in both languages: `docs/screenshot-*.png` (English, taken with `#en`) and `docs/screenshot-*.zh.png` (Chinese, the default).
+- The first-run onboarding is Chinese in the source and translated through the i18n table, so it reads correctly in both languages.
+- `manifest.webmanifest` uses the Chinese app name (`求职投递看板 · Job Kanban`, short name `投递看板`) and `lang: zh-CN`.
+
+### Fixed
+
+- In English mode the language toggle showed `中文` and a bilingual `title`; it now reads `Chinese` and the tooltip goes through the i18n table, so the English UI contains **zero** CJK characters again.
+- `tests/cjk_check.py` now verifies **both directions**: the default UI must be Chinese, and the UI forced with `#en` (4 views) must contain no Chinese at all.
+- Frontend regression tests grew to **124** (11 new assertions covering the Chinese default and the English switch).
+
 ## [1.2.0] - 2026-10-04
 
 ### Added
@@ -128,6 +143,7 @@ First public release.
 - **The on-disk file is authoritative, not localStorage**: localStorage gets wiped, differs per browser and can't go into git.
 - **JSON over SQLite**: for a single user with a few hundred records, git-diffability and portability matter more; the real risks are solved with per-record writes + a write lock + atomic replace.
 
+[1.2.1]: https://github.com/daetz-coder/job-kanban/releases/tag/v1.2.1
 [1.2.0]: https://github.com/daetz-coder/job-kanban/releases/tag/v1.2.0
 [1.1.1]: https://github.com/daetz-coder/job-kanban/releases/tag/v1.1.1
 [1.1.0]: https://github.com/daetz-coder/job-kanban/releases/tag/v1.1.0

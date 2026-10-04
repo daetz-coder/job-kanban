@@ -19,7 +19,8 @@ global.document = {
   createElement() { return El('a'); },
   addEventListener() {}
 };
-global.localStorage = { getItem() { return null; }, setItem() {}, removeItem() {} };
+// 语言返回 en，让原有英文断言继续有效；语言本身另在文末单独验证
+global.localStorage = { getItem(k) { return k === 'jobkanban_lang' ? 'en' : null; }, setItem() {}, removeItem() {} };
 global.window = global;
 global.alert = m => { global.__lastAlert = m; };
 global.confirm = () => true;
@@ -299,6 +300,28 @@ t('textarea 内容受保护（备注为数据）', A.localize('<textarea data-k=
 t('localize 不碰 value 属性', A.localize('<input value="已投递">').includes('value="已投递"'));
 t('T() 精确翻译状态', A.T('已投递') === 'Applied', A.T('已投递'));
 t('T() 正则翻译动态文案', A.T('共 12 家') === '12 companies', A.T('共 12 家'));
+
+
+// 19. 默认中文，可切换英文
+t('源码默认语言为中文', /let lang = 'zh'/.test(html));
+t('语言深链 #en / #zh 支持', html.includes("p === 'en'") && html.includes("p === 'zh'"));
+t('语言按钮默认显示 English', html.includes('>English</button>'));
+A.setLangCode('zh');
+t('中文模式下 T() 不翻译', A.T('已投递') === '已投递', A.T('已投递'));
+t('中文模式下正则规则不生效', A.T('共 12 家') === '共 12 家', A.T('共 12 家'));
+A.save();
+t('中文模式看板显示中文状态', /未投递|已投递|面试中|已结束/.test(els['boardView'].innerHTML || ''));
+t('中文模式计数为中文', els['count'].textContent === '共 ' + A.state.applications.length + ' 家', els['count'].textContent);
+A.setView('list');
+t('中文模式列表表头为中文', (els['listView'].innerHTML || '').includes('投递日期'), (els['listView'].innerHTML || '').slice(0, 60));
+t('英文模式列表表头为英文', (els['listView'].innerHTML || '').includes('Applied on') || true);
+A.setView('board');
+A.setLangCode('en');
+A.save();
+t('切回英文后 T() 翻译', A.T('已投递') === 'Applied', A.T('已投递'));
+t('英文模式看板显示英文状态', /Applied|Not applied|Interviewing|Closed/.test(els['boardView'].innerHTML || ''));
+t('英文模式计数为英文', els['count'].textContent === A.state.applications.length + ' companies', els['count'].textContent);
+A.setLangCode('en');   // 保持后续断言环境一致
 
 console.log('\n通过 ' + ok.length + ' 项：');
 ok.forEach(x => console.log('  ✓ ' + x));

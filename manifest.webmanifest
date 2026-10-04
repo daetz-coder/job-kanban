@@ -1,26 +1,62 @@
 {
-  "name": "Job Kanban",
-  "short_name": "Job Kanban",
-  "description": "Local-first job-application kanban: drag cards to advance stages, data stays in a plain JSON file you own.",
-  "lang": "en",
+  "name": "求职投递看板 · Job Kanban",
+  "short_name": "投递看板",
+  "description": "本地优先的求职投递看板：拖拽推进状态，数据就是你自己的一个 JSON 文件。",
+  "lang": "zh-CN",
   "dir": "ltr",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "standalone", "browser"],
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "browser"
+  ],
   "orientation": "any",
   "background_color": "#f5f6f8",
   "theme_color": "#2f6fed",
-  "categories": ["productivity", "utilities"],
+  "categories": [
+    "productivity",
+    "utilities"
+  ],
   "icons": [
-    { "src": "docs/icons/favicon-32.png", "sizes": "32x32", "type": "image/png" },
-    { "src": "docs/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "docs/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "docs/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "docs/icons/favicon-32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "docs/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "docs/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "docs/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ],
   "shortcuts": [
-    { "name": "Board", "url": "./#board", "description": "Kanban board view" },
-    { "name": "List", "url": "./#list", "description": "Table view with search and filters" },
-    { "name": "By position", "url": "./#pos", "description": "Grouped cards, one per company" }
+    {
+      "name": "看板",
+      "url": "./#board",
+      "description": "看板视图"
+    },
+    {
+      "name": "列表",
+      "url": "./#list",
+      "description": "表格视图（搜索与筛选）"
+    },
+    {
+      "name": "按岗位",
+      "url": "./#pos",
+      "description": "按岗位分组的卡片"
+    }
   ]
 }

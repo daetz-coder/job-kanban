@@ -35,7 +35,7 @@ import threading
 import time
 import urllib.parse
 
-__version__ = '1.2.0'
+__version__ = '1.2.1'
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 FROZEN = bool(getattr(sys, 'frozen', False))

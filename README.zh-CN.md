@@ -15,7 +15,7 @@
 [![中文](https://img.shields.io/badge/README-中文-red)](README.md)
 [![English](https://img.shields.io/badge/README-English-blue)](README.zh-CN.md)
 
-<img src="docs/screenshot-board.png" alt="看板视图" width="100%">
+<img src="docs/screenshot-board.zh.png" alt="看板视图" width="100%">
 
 </div>
 
@@ -67,6 +67,9 @@ python server.py
 ### 单文件 —— 最省事的形态
 
 下载 `job-kanban-standalone.html`，双击打开即可。纯前端：数据存在浏览器本地，用 **导出 / 导入** 做备份。
+
+> **界面语言**：默认**中文**（左上角一键切英文）。URL 加 `#en` 可强制英文——下面的截图就是英文界面。
+> 数据字段与状态值始终是中文 schema，老台账继续可用，详见[数据格式](#数据格式)。
 
 ## 目录
 
@@ -169,15 +172,15 @@ make shots    # 重新生成 README 截图
 
 **看板视图**（拖拽推进状态，整列可投放）
 
-<img src="docs/screenshot-board.png" alt="看板视图" width="100%">
+<img src="docs/screenshot-board.zh.png" alt="看板视图" width="100%">
 
 **按岗位视图**（同一家公司多个岗位合并成一张卡，卡内逐岗位改状态）
 
-<img src="docs/screenshot-positions.png" alt="按岗位视图" width="100%">
+<img src="docs/screenshot-positions.zh.png" alt="按岗位视图" width="100%">
 
 **列表视图**（搜索 / 筛选 / 排序 / 链接可访问性）
 
-<img src="docs/screenshot-list.png" alt="列表视图" width="100%">
+<img src="docs/screenshot-list.zh.png" alt="列表视图" width="100%">
 
 ## 数据与安全
 

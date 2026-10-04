@@ -200,7 +200,7 @@
     <div class="brand">
       <h1>投递看板</h1>
       <div class="sub">2027 届校招 · AI Agent · 杭州</div>
-      <button class="btn langbtn" id="langBtn" title="Switch UI language">Chinese</button>
+      <button class="btn langbtn" id="langBtn" title="切换界面语言">English</button>
     </div>
 
     <div class="funnel" id="funnel"></div>
@@ -283,23 +283,23 @@
 
 <div class="onb" id="onb">
   <div class="onb-card">
-    <h2>Welcome to Job Kanban</h2>
-    <p class="lead">This page runs entirely in your browser — nothing is uploaded. Choose where your data should live:</p>
+    <h2>欢迎使用求职投递看板</h2>
+    <p class="lead">这个页面完全运行在你的浏览器里，不会上传任何数据。请选择数据存放在哪里：</p>
     <div class="onb-opt" id="onbBind">
       <span style="font-size:18px;line-height:1">📄</span>
-      <span><b>Bind a local JSON file</b><span>Recommended · every change is written straight to the file you pick (Chrome / Edge)</span></span>
+      <span><b>绑定本地 JSON 文件</b><span>推荐 · 每次改动直接写入你选的文件（Chrome / Edge）</span></span>
     </div>
     <div class="onb-opt" id="onbLocal">
       <span style="font-size:18px;line-height:1">💾</span>
-      <span><b>Keep it in this browser</b><span>No file access needed · export a JSON backup any time</span></span>
+      <span><b>只存在这个浏览器里</b><span>无需文件权限 · 随时可导出 JSON 备份</span></span>
     </div>
     <div class="onb-opt" id="onbImport">
       <span style="font-size:18px;line-height:1">📥</span>
-      <span><b>Import an existing ledger</b><span>Pick a ledger.json you already have</span></span>
+      <span><b>导入已有台账</b><span>选择你已有的 ledger.json</span></span>
     </div>
     <div class="onb-actions">
-      <span class="onb-note">Want autosave to disk on your own machine instead? Clone the repo and run <code>python server.py</code>.</span>
-      <button class="btn" id="onbClose" type="button">Start</button>
+      <span class="onb-note">想在本机自动写盘？克隆仓库后运行 <code>python server.py</code>。</span>
+      <button class="btn" id="onbClose" type="button">开始使用</button>
     </div>
   </div>
 </div>
@@ -1627,7 +1627,7 @@ function renderDatalists(){
 */
 const LANG_KEY = 'jobkanban_lang';
 let FORCE_ONBOARD = false;      // #onboard：在 syncHash 改写 hash 之前捕获
-let lang = 'en';
+let lang = 'zh';                                  // 默认中文，可切换英文
 try{ const _v = localStorage.getItem(LANG_KEY); if(_v === 'zh' || _v === 'en') lang = _v; }catch(e){}
 
 const EN = {
@@ -1691,6 +1691,17 @@ const EN = {
   'v1 通用版 / v2 Agent强化版':'v1 general / v2 Agent-focused',
   'v1 通用版':'v1 general','v2 Agent强化版':'v2 Agent-focused',
   'BOSS直聘':'BOSS Zhipin','猎聘':'Liepin','实习僧':'Shixiseng',
+  '切换界面语言':'Switch UI language',
+  '欢迎使用求职投递看板':'Welcome to Job Kanban',
+  '这个页面完全运行在你的浏览器里，不会上传任何数据。请选择数据存放在哪里：':'This page runs entirely in your browser — nothing is uploaded. Choose where your data should live:',
+  '绑定本地 JSON 文件':'Bind a local JSON file',
+  '推荐 · 每次改动直接写入你选的文件（Chrome / Edge）':'Recommended · every change is written straight to the file you pick (Chrome / Edge)',
+  '只存在这个浏览器里':'Keep it in this browser',
+  '无需文件权限 · 随时可导出 JSON 备份':'No file access needed · export a JSON backup any time',
+  '导入已有台账':'Import an existing ledger',
+  '选择你已有的 ledger.json':'Pick a ledger.json you already have',
+  '想在本机自动写盘？克隆仓库后运行':'Want autosave to disk on your own machine instead? Clone the repo and run',
+  '开始使用':'Start',
   '技术类':'Engineering','产品类':'Product','算法类':'Algorithm','设计类':'Design','运营类':'Operations',
   '官网':'Official site','牛客':'Nowcoder','BOSS直聘':'BOSS Zhipin','猎聘':'Liepin','实习僧':'Shixiseng','邮箱':'Email',
   '手动修改':'Manual edit','看板拖拽':'Board drag','弹窗推进':'Advanced in dialog','列表推进':'Advanced in list',
@@ -2091,7 +2102,9 @@ function applyHash(){
     if(typeof location !== 'undefined') FORCE_ONBOARD = /onboard/.test(location.hash || '');
     if(typeof location === 'undefined' || !location.hash) return;
     location.hash.replace('#','').split(/[,+&\s]+/).filter(Boolean).forEach(p=>{
-      if(p === 'list' || p === 'board') view = p;
+      if(p === 'en' || p === 'lang=en') lang = 'en';        // #en 强制英文（分享 / 截图用）
+      else if(p === 'zh' || p === 'lang=zh') lang = 'zh';
+      else if(p === 'list' || p === 'board') view = p;
       else if(p === 'pos' || p === 'position') unit = 'position';
       else if(p === 'co' || p === 'company') unit = 'company';
       else if(p === 'issue') filter.issue = true;
@@ -2115,7 +2128,7 @@ try{ document.title = T(document.title); }catch(e){}
 (function initLangBtn(){
   const lb = document.getElementById('langBtn');
   if(!lb) return;
-  lb.textContent = (lang === 'en') ? 'Chinese' : 'English';
+  lb.textContent = (lang === 'en') ? 'Chinese' : 'English';   // 英文界面不出现中文字符
   lb.addEventListener('click', ()=> setLang(lang === 'en' ? 'zh' : 'en'));
 })();
 render();
@@ -2418,6 +2431,7 @@ window.__app = { get state(){return state;}, get view(){return view;}, setView(v
   detectServer, pushToServer, flushSync, diffSince, putRecord, deleteRecord, postFull,
   localize, T, TT, applyLang, get lang(){ return lang; },
   showOnboard, hideOnboard, initPWA, initOnboard, get forceOnboard(){ return FORCE_ONBOARD; },
+  setLangCode(c){ lang = (c === 'en') ? 'en' : 'zh'; },
   get serverMode(){ return serverMode; } };
 </script>
 </body>

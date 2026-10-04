@@ -18,7 +18,7 @@
 
 ---
 
-> **Language**: the UI ships in **English** with a one-click 中文 toggle (top-left). Data keys and stage values stay in Chinese so existing ledgers keep working — see [Data format](#data-format).
+> **Language**: the UI ships in **Chinese** (the tool is built for the Chinese campus-recruitment season) with a one-click **English** toggle in the top-left. Append `#en` to any URL to force English (that is how the screenshots below were taken). Data keys and stage values stay in Chinese so existing ledgers keep working — see [Data format](#data-format).
 
 ## Install
 
@@ -164,7 +164,7 @@ make shots      # regenerate the README screenshots
 
 ## Screenshots
 
-**Board view** — drag to advance a stage
+**Board view** (English, forced with `#en`) — drag to advance a stage
 
 <img src="docs/screenshot-board.png" alt="Board view" width="100%">
 
@@ -367,9 +367,9 @@ Company cards are draggable in "By company" view. In "By position" view, grouped
 </details>
 
 <details>
-<summary><b>Can I switch the UI back to Chinese?</b></summary>
+<summary><b>Can I switch the UI to English?</b></summary>
 
-Yes — click the **中文** button in the top-left. The choice is remembered (`jobkanban_lang` in localStorage).
+Yes — click the **English** button in the top-left (the default is Chinese). The choice is remembered (`jobkanban_lang` in localStorage), and appending `#en` to a URL forces English for that load — handy for sharing screenshots.
 </details>
 
 ## Design notes

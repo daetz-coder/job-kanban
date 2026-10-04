@@ -1,6 +1,6 @@
 {
   "name": "job-kanban",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Local-first job-application kanban: single-file frontend, zero-dependency Python server, your data in a plain JSON file",
   "private": true,
   "scripts": {
